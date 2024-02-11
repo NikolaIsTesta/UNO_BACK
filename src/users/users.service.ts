@@ -8,12 +8,14 @@ export class UsersService {
   constructor(
     private readonly prismaService: PrismaService) {}
     
-  async create(createUserDto: CreateUserDto) {
-    const newUser = await this.prismaService.user.create({
-      data: createUserDto,
-    });
-    return newUser;
-  }
+  async create() { 
+  let newUser = await this.prismaService.user.create({ 
+    data: {}, 
+  }); 
+  newUser.nickname = "Игрок" + newUser.id.toString();
+  newUser = await this.update(newUser.id, newUser);
+  return newUser;
+}
 
   async update(id: number, updateUserDto: UpdateUserDto) {
     return await this.prismaService.user.update({

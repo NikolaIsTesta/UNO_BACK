@@ -4,11 +4,8 @@ export class CreateUserDto {
     @IsNotEmpty()
     @ApiProperty()
     id:            number  
-    @IsString()
-    @IsNotEmpty()  
-    @ApiProperty()    
-    nickname:      string
+    @IsString() 
+    nickname?:      string
     lobbyId? :     number
     numberInTurn?:  number
-    cards?: { color: string, value: string }[]
 }

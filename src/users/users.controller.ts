@@ -10,22 +10,11 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @ApiOperation({ summary: "Entering a nickname" })
+  @ApiOperation({ summary: "Create new user" })
   @ApiCreatedResponse({ type: CreateUserDto })
   @ApiBadRequestResponse({ description: 'User doesnt created' })
-  @ApiBody({
-    type: CreateUserDto,
-    description: "An example of entering a nickname after that it will be added to the database, and an ID will also be assigned",
-    examples: {
-        a: {
-            summary: "New nickname",
-            description: "Example of entering a nickname",
-            value: {nickname: "FantaRei"} as CreateUserDto
-        }
-    }
-})
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  create() {
+    return this.usersService.create();
   }
 
   @ApiOperation({ summary: "Edit nickname" })

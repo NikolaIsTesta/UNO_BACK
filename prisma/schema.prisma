@@ -30,9 +30,9 @@ model Lobby {
 
 model User {
   id                Int              @id @default(autoincrement())
-  nickname          String
+  nickname          String?
   lobbyId           Int?
   numberInTurn      Int?
   lobby             Lobby?            @relation(fields: [lobbyId], references: [id])
-  cards             Json?
+  cards             Json[]
 }
