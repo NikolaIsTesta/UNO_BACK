@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -23,8 +23,17 @@ export class UsersService {
       data: updateUserDto,
     });
   }
+  
 
   remove(id: number) {
     return `This action removes a #${id} user`;
+  }
+
+  async getById(id: number) {
+    const user = await this.prismaService.user.findFirst({ where: {id} });
+    if (user) {
+      return user;
+    }
+    throw new HttpException('User with this id does not exist', HttpStatus.NOT_FOUND);
   }
 }

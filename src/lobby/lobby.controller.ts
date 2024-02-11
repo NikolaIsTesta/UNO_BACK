@@ -33,7 +33,7 @@ export class LobbyController {
   }
   
 
-  @Post('join-lobby:id')
+  @Post('join-lobby/:id')
   @ApiOperation({ summary: "Enter the lobby" })
   @ApiOkResponse({ description: 'Enter the lobby has been made successfully.'})
   @ApiBadRequestResponse({ description: 'Enter the lobby cannot be made' })
@@ -71,6 +71,20 @@ export class LobbyController {
     type: Number
   })
   async exitLobby(@Param('id') id: string) {
+    return this.lobbyService.exitLobby(+id);
+  }
+
+  @Get('kick:id')
+  @ApiOperation({ summary: "Kick player from lobby" })
+  @ApiOkResponse({ description: 'player has been removed.'})
+  @ApiBadRequestResponse({ description: 'It is not possible to kick a player' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'There must be user ID that they want to kick',
+    type: Number
+  })
+  async kickPlayer(@Param('id') id: string) {
     return this.lobbyService.exitLobby(+id);
   }
 }
