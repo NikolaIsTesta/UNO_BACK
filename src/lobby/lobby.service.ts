@@ -34,13 +34,18 @@ export class LobbyService {
       const existingLobby = await this.prismaService.lobby.findFirst({ where: {code} });
       if (existingLobby)
       {
-        await this.prismaService.user.update({
-          where: { id: id },
-          data:  { lobbyId: existingLobby.id},
-        });
-        return "You have entered the lobby";
-      }  
-      return "You have not entered the lobby";
+        const count = await this.prismaService.user.count({ where: {lobbyId: existingLobby.id} })
+        if (count < existingLobby.numPlayers){
+          await this.prismaService.user.update({
+            where: { id: id },
+            data:  { lobbyId: existingLobby.id},
+          });
+          return "You have entered the lobby";
+        }
+        else
+          return "There is not enough space in the lobby"
+      }
+      return "The lobby does not exist";
     }
 
     async exitLobby(id: number){
