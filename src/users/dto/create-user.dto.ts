@@ -8,4 +8,5 @@ export class CreateUserDto {
     nickname?:      string
     lobbyId? :     number
     numberInTurn?:  number
+    ready? : boolean
 }

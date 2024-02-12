@@ -33,6 +33,7 @@ model User {
   nickname          String?
   lobbyId           Int?
   numberInTurn      Int?
+  ready             Boolean?          @default(false)
   lobby             Lobby?            @relation(fields: [lobbyId], references: [id])
   cards             Json[]
 }

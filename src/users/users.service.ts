@@ -2,6 +2,8 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { read } from 'fs';
+import { bool, boolean } from 'joi';
 
 @Injectable()
 export class UsersService {
@@ -35,5 +37,17 @@ export class UsersService {
       return user;
     }
     throw new HttpException('User with this id does not exist', HttpStatus.NOT_FOUND);
+  }
+
+  async updateFieldReady(user: CreateUserDto) {
+    if (user.lobbyId) {
+      const state = !user.ready;
+      return await this.prismaService.user.update({
+        where: { id: user.id },
+        data: { ready: state }
+      });
+    } else {
+      return "The user is not in the lobby";
+    }
   }
 }
