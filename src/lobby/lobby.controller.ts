@@ -15,6 +15,7 @@ import RequestWithUser from 'src/authentication/requestWithUser.interface';
 export class LobbyController {
   constructor(private readonly lobbyService: LobbyService) {}
 
+  @UseGuards(JwtAuthenticationGuard)
   @Post()
   @ApiOperation({ summary: "Create a lobby" })
   @ApiCreatedResponse({ type: CreateLobbyDto })
@@ -26,25 +27,20 @@ export class LobbyController {
         b: {
             summary: "New lobby",
             description: "Example of creating a lobby",
-            value: { hostId: 123, numPlayers: 4 } as CreateLobbyDto
+            value: { numPlayers: 4 } as CreateLobbyDto
         }
     }
 })
-  create(@Body() createLobbyDto: CreateLobbyDto) {
+  create(@Req() request: RequestWithUser, @Body() createLobbyDto: CreateLobbyDto) {
+    createLobbyDto.hostId = request.user.id;
     return this.lobbyService.create(createLobbyDto);
   }
   
-
-  @Post('join-lobby/:id')
+  @UseGuards(JwtAuthenticationGuard)
+  @Post('join-lobby')
   @ApiOperation({ summary: "Enter the lobby" })
   @ApiOkResponse({ description: 'Enter the lobby has been made successfully.'})
   @ApiBadRequestResponse({ description: 'Enter the lobby cannot be made' })
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description: 'There must be a user with an ID who wants to enter the lobby',
-    type: Number
-  })
   @ApiBody({
     type: CreateLobbyDto,
     description: "The code of the lobby that the user wants to enter and the ID of the user who wants to connect are transmitted",
@@ -56,24 +52,18 @@ export class LobbyController {
         }
     }
 })
-  async joinLobby(@Param('id') id: string, @Body() createLobbyDto: CreateLobbyDto) {
-    return this.lobbyService.joinLobby(+id, createLobbyDto);
+  async joinLobby(@Req() request: RequestWithUser, @Body() createLobbyDto: CreateLobbyDto) {
+    return this.lobbyService.joinLobby(request.user.id, createLobbyDto);
   }
 
 
   @UseGuards(JwtAuthenticationGuard)
-  @Post('exit:id')
+  @Post('exit')
   @ApiOperation({ summary: "Exit the lobby" })
   @ApiOkResponse({ description: 'Exit from the lobby was successfully completed.'})
   @ApiBadRequestResponse({ description: 'It is not possible to exit the lobby' })
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description: 'There must be a ID user who wants to exit from lobby',
-    type: Number
-  })
-  async exitLobby(@Param('id') id: string) {
-    return this.lobbyService.exitLobby(+id);
+  async exitLobby(@Req() request: RequestWithUser) {
+    return this.lobbyService.exitLobby(request.user.id);
   }
 
   @Get('kick/:id')
