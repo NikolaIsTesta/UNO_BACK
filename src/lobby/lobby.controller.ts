@@ -85,6 +85,12 @@ export class LobbyController {
     type: Number
   })
   async kickPlayer(@Param('id') id: string) {
-    return this.lobbyService.exitLobby(+id);
+    //return this.lobbyService.exitLobby(+id);
+  }
+
+//сваггеры
+  @Get("hostId/:id")
+  async getHostId(@Param('id') id: string){
+    return this.lobbyService.getHostIdFromIdLobby(+id);
   }
 }

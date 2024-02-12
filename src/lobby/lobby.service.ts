@@ -64,4 +64,12 @@ export class LobbyService {
       }
     }
 
+
+    async getHostIdFromIdLobby(id:number){
+      const existingLobby = await this.prismaService.lobby.findFirst({ where: { id }})
+      if (existingLobby)
+        return existingLobby.hostId;
+      else
+        return "Lobby does not exist"
+    }
 }
