@@ -61,7 +61,7 @@ export class LobbyController {
   }
 
 
-
+  @UseGuards(JwtAuthenticationGuard)
   @Post('exit:id')
   @ApiOperation({ summary: "Exit the lobby" })
   @ApiOkResponse({ description: 'Exit from the lobby was successfully completed.'})
@@ -95,5 +95,11 @@ export class LobbyController {
   @Get("hostId")
   async getHostId(@Req() request: RequestWithUser){
     return this.lobbyService.getHostIdFromIdLobby(request.user.lobbyId);
+  }
+
+  @UseGuards(JwtAuthenticationGuard)
+  @Get("getInfo/all-players")
+  async getPlayers(@Req() request: RequestWithUser){
+    return this.lobbyService.getAllPlayersInLobby(request.user.lobbyId);
   }
 }

@@ -22,12 +22,6 @@ export class UsersController {
   @ApiOperation({ summary: "Edit nickname" })
   @ApiOkResponse({ type: CreateUserDto })
   @ApiBadRequestResponse({ description: 'Nickname doesnt edited' })
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description: 'There must be an ID of an existing user',
-    type: Number
-  })
   @ApiBody({   type: CreateUserDto,
     description: "Edit nickname",
     examples: {
@@ -37,15 +31,16 @@ export class UsersController {
             value: {nickname: "ReiFanta"} as CreateUserDto
         }
     }})
-  @Patch('chabge-nick:id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+  @UseGuards(JwtAuthenticationGuard)
+  @Patch('update-nick')
+  update(@Req() request: RequestWithUser, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(request.user.id, updateUserDto);
   }
 
 
   // сваггеры
   @UseGuards(JwtAuthenticationGuard)
-  @Patch('change-ready')
+  @Patch('switch/ready')
   switchReadyField(@Req() request: RequestWithUser) {
     return this.usersService.updateFieldReady(request.user);
   }

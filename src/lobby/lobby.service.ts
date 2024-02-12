@@ -72,4 +72,21 @@ export class LobbyService {
       else
         return "Lobby does not exist"
     }
+
+
+    async getAllPlayersInLobby(id:number){
+      const existingLobby = await this.prismaService.lobby.findFirst({ where: { id }})
+      if (existingLobby) {
+        return await this.prismaService.user.findMany({ 
+          where: { lobbyId: id },
+          select: {
+            id: true,
+            nickname: true,
+            ready: true
+          }
+        });
+      }
+      else
+        return "Lobby does not exist"
+    }
 }
