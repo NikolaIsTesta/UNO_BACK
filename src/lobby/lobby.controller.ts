@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ValidationError } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ValidationError, UseGuards, Req } from '@nestjs/common';
 import { LobbyService } from './lobby.service';
 import { CreateLobbyDto } from './dto/create-lobby.dto';
 import { UpdateLobbyDto } from './dto/update-lobby.dto';
 import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiExtraModels, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { v4 as uuidv4 } from 'uuid';
 import { Lobby } from './entities/lobby.entity';
+import JwtAuthenticationGuard from 'src/authentication/jwt-authentication.guard';
+import RequestWithUser from 'src/authentication/requestWithUser.interface';
 
 
 
@@ -74,7 +76,7 @@ export class LobbyController {
     return this.lobbyService.exitLobby(+id);
   }
 
-  @Get('kick:id')
+  @Get('kick/:id')
   @ApiOperation({ summary: "Kick player from lobby" })
   @ApiOkResponse({ description: 'player has been removed.'})
   @ApiBadRequestResponse({ description: 'It is not possible to kick a player' })
@@ -89,8 +91,9 @@ export class LobbyController {
   }
 
 //сваггеры
-  @Get("hostId/:id")
-  async getHostId(@Param('id') id: string){
-    return this.lobbyService.getHostIdFromIdLobby(+id);
+  @UseGuards(JwtAuthenticationGuard)
+  @Get("hostId")
+  async getHostId(@Req() request: RequestWithUser){
+    return this.lobbyService.getHostIdFromIdLobby(request.user.lobbyId);
   }
 }
