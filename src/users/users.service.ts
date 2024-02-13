@@ -42,7 +42,10 @@ export class UsersService {
       const state = !user.ready;
       return await this.prismaService.user.update({
         where: { id: user.id },
-        data: { ready: state }
+        data: { ready: state },
+        select: {
+          ready: true
+        }
       });
     } else {
       return "The user is not in the lobby";

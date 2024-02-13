@@ -19,6 +19,8 @@ export class UsersController {
     return this.usersService.create();
   }
 
+  @UseGuards(JwtAuthenticationGuard)
+  @Patch('update-nick')
   @ApiOperation({ summary: "Edit nickname" })
   @ApiOkResponse({ type: CreateUserDto })
   @ApiBadRequestResponse({ description: 'Nickname doesnt edited' })
@@ -31,16 +33,17 @@ export class UsersController {
             value: {nickname: "ReiFanta"} as CreateUserDto
         }
     }})
-  @UseGuards(JwtAuthenticationGuard)
-  @Patch('update-nick')
   update(@Req() request: RequestWithUser, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(request.user.id, updateUserDto);
   }
 
 
-  // сваггеры
+  
   @UseGuards(JwtAuthenticationGuard)
   @Patch('switch/ready')
+  @ApiOperation({ summary: "Switch the player's status in the lobby to ready/not ready" })
+  @ApiOkResponse({ type: CreateUserDto })
+  @ApiBadRequestResponse({ description: 'Bad request' })
   switchReadyField(@Req() request: RequestWithUser) {
     return this.usersService.updateFieldReady(request.user);
   }
