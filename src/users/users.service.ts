@@ -2,8 +2,6 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { read } from 'fs';
-import { bool, boolean } from 'joi';
 
 @Injectable()
 export class UsersService {
@@ -16,7 +14,7 @@ export class UsersService {
   }); 
   newUser.nickname = "Игрок" + newUser.id.toString();
   newUser = await this.update(newUser.id, newUser);
-  return newUser;
+  return { id: newUser.id, name: newUser.nickname };;
 }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
