@@ -3,9 +3,23 @@ import { Response } from 'express';
 import { AuthenticationService } from './authentication.service';
 import RequestWithUser from './requestWithUser.interface';
 import JwtAuthenticationGuard from './jwt-authentication.guard';
-import { ApiBadRequestResponse, ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
- 
+export class authUserDto {
+  @ApiProperty({ example: 1 })
+  id:            number  
+  @ApiProperty({ example: 'Rei' })
+  nickname:      string
+  @ApiProperty({ example: 1 })
+  lobbyId:     number
+  @ApiProperty({ example: 1 })
+  numberInTurn:  number
+  @ApiProperty({ example: true })
+  ready: boolean
+  @ApiProperty()
+  cards: JSON
+}
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthenticationController {
@@ -44,7 +58,7 @@ export class AuthenticationController {
   @UseGuards(JwtAuthenticationGuard)
   @Get()
   @ApiOperation({ summary: "Show information about an authorized user" })
-  @ApiOkResponse({ type: CreateUserDto })
+  @ApiOkResponse({ type: authUserDto })
   @ApiBadRequestResponse({ description: 'Error when issuing data about an authorized user' })
   authenticate(@Req() request: RequestWithUser) {
     const user = request.user;
