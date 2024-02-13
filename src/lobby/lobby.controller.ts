@@ -1,14 +1,22 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, ValidationError, UseGuards, Req } from '@nestjs/common';
 import { LobbyService } from './lobby.service';
 import { CreateLobbyDto } from './dto/create-lobby.dto';
-import { UpdateLobbyDto } from './dto/update-lobby.dto';
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiExtraModels, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
-import { v4 as uuidv4 } from 'uuid';
-import { Lobby } from './entities/lobby.entity';
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiExtraModels, ApiOkResponse, ApiOperation, ApiParam, ApiProperty, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import JwtAuthenticationGuard from 'src/authentication/jwt-authentication.guard';
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
+export class hostIdLobbyDto {
+  @ApiProperty({ example: 1 })
+  hostId: number;
+}
 
-
+export class PlayerDto {
+  @ApiProperty({ example: 1 })
+  id: number;
+  @ApiProperty({ example: "Rei" })
+  nickname: string;
+  @ApiProperty({ example: false })
+  ready: boolean;
+}
 
 @ApiTags('lobby')
 @Controller('lobby')
@@ -80,15 +88,20 @@ export class LobbyController {
     //return this.lobbyService.exitLobby(+id);
   }
 
-//сваггеры
+
   @UseGuards(JwtAuthenticationGuard)
   @Get("hostId")
+  @ApiOperation({ summary: "Get the ID of the lobby host" })
+  @ApiOkResponse({ type: hostIdLobbyDto })
+  @ApiBadRequestResponse({ description: "Lobby does not exist" })
   async getHostId(@Req() request: RequestWithUser){
     return this.lobbyService.getHostIdFromIdLobby(request.user.lobbyId);
   }
 
   @UseGuards(JwtAuthenticationGuard)
-  @Get("getInfo/all-players")
+  @Get('players')
+  @ApiOperation({ summary: 'Get list of players in the lobby' })
+  @ApiOkResponse({ type: [PlayerDto] })
   async getPlayers(@Req() request: RequestWithUser){
     return this.lobbyService.getAllPlayersInLobby(request.user.lobbyId);
   }
