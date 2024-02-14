@@ -5,6 +5,8 @@ import RequestWithUser from './requestWithUser.interface';
 import JwtAuthenticationGuard from './jwt-authentication.guard';
 import { ApiBadRequestResponse, ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { LocalAuthGuard } from 'src/guards/local.auth.guard';
 export class authUserDto {
   @ApiProperty({ example: 1 })
   id:            number  
@@ -26,6 +28,7 @@ export class AuthenticationController {
   constructor(private readonly authenticationService: AuthenticationService) {}
 
   @HttpCode(200)
+  @UseGuards(LocalAuthGuard)
   @Post('log-in/:id')
   @ApiOperation({ summary: "Log in" })
   @ApiOkResponse({ description: 'you have successfully logged in'})

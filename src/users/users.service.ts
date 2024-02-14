@@ -14,7 +14,7 @@ export class UsersService {
   }); 
   newUser.nickname = "Игрок" + newUser.id.toString();
   newUser = await this.update(newUser.id, newUser);
-  return { id: newUser.id, name: newUser.nickname };;
+  return { id: newUser.id, nickname: newUser.nickname };;
 }
 
   async update(id: number, updateUserDto: UpdateUserDto) {

@@ -4,7 +4,7 @@ import { CreateLobbyDto } from './dto/create-lobby.dto';
 import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiExtraModels, ApiOkResponse, ApiOperation, ApiParam, ApiProperty, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import JwtAuthenticationGuard from 'src/authentication/jwt-authentication.guard';
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
-import HostGuard from 'src/guards/hostGuard';
+import HostGuard from 'src/guards/host.guard';
 export class hostIdLobbyDto {
   @ApiProperty({ example: 1 })
   hostId: number;
