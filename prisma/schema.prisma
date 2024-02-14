@@ -16,7 +16,9 @@ model Game{
     deck              Json
     spentCards        Json?
     currentCards      Json?
+    direction         Boolean?
     lobby             Lobby          @relation(fields: [lobbyId], references: [id])
+
 }
 
 model Lobby {
