@@ -64,7 +64,6 @@ export class LobbyService {
       }
     }
 
-
     async getHostIdFromIdLobby(id:number){
       const existingLobby = await this.prismaService.lobby.findFirst({ where: { id }})
       if (existingLobby)
@@ -72,7 +71,6 @@ export class LobbyService {
       else
         return "Lobby does not exist"
     }
-
 
     async getAllPlayersInLobby(id:number){
       const existingLobby = await this.prismaService.lobby.findFirst({ where: { id }})
@@ -89,4 +87,23 @@ export class LobbyService {
       else
         return "Lobby does not exist"
     }
+
+    async kickUserFromLobby(playerId: number, host: CreateUserDto){
+      const lobby = await this.prismaService.lobby.findFirst({ where:{ id: host.lobbyId } })
+      const player = await this.prismaService.user.findFirst({ where:{ id: playerId} })
+      if (lobby.hostId == playerId) {
+        return "You can't kick yourself"
+      }
+      else {
+        await this.prismaService.user.update({
+          where: { id: playerId },
+          data:  { lobbyId: null }
+        })
+        return "You kicked out a player with the nickname " + player.nickname
+      }
+    }
+
+   async findOne(id: number) {
+      return await this.prismaService.lobby.findFirst({ where: { id } });
+  }
 }

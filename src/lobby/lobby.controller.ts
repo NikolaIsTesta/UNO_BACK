@@ -4,6 +4,7 @@ import { CreateLobbyDto } from './dto/create-lobby.dto';
 import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiExtraModels, ApiOkResponse, ApiOperation, ApiParam, ApiProperty, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import JwtAuthenticationGuard from 'src/authentication/jwt-authentication.guard';
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
+import HostGuard from 'src/guards/hostGuard';
 export class hostIdLobbyDto {
   @ApiProperty({ example: 1 })
   hostId: number;
@@ -74,21 +75,6 @@ export class LobbyController {
     return this.lobbyService.exitLobby(request.user.id);
   }
 
-  @Get('kick/:id')
-  @ApiOperation({ summary: "Kick player from lobby" })
-  @ApiOkResponse({ description: 'player has been removed.'})
-  @ApiBadRequestResponse({ description: 'It is not possible to kick a player' })
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description: 'There must be user ID that they want to kick',
-    type: Number
-  })
-  async kickPlayer(@Param('id') id: string) {
-    //return this.lobbyService.exitLobby(+id);
-  }
-
-
   @UseGuards(JwtAuthenticationGuard)
   @Get("hostId")
   @ApiOperation({ summary: "Get the ID of the lobby host" })
@@ -99,10 +85,26 @@ export class LobbyController {
   }
 
   @UseGuards(JwtAuthenticationGuard)
+  @UseGuards()
   @Get('players')
   @ApiOperation({ summary: 'Get list of players in the lobby' })
   @ApiOkResponse({ type: [PlayerDto] })
   async getPlayers(@Req() request: RequestWithUser){
     return this.lobbyService.getAllPlayersInLobby(request.user.lobbyId);
+  }
+
+  @UseGuards(JwtAuthenticationGuard, HostGuard)
+  @Post('kick/:id')
+  @ApiOperation({ summary: "Kick player from lobby" })
+  @ApiOkResponse({ description: 'player has been removed.'})
+  @ApiBadRequestResponse({ description: 'It is not possible to kick a player' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'There must be user ID that they want to kick',
+    type: Number
+  })
+  async kickPlayer(@Param('id') id: string, @Req() request: RequestWithUser) {
+    return this.lobbyService.kickUserFromLobby(+id, request.user);
   }
 }
