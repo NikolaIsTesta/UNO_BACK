@@ -12,10 +12,19 @@ export class GameService {
     private readonly prismaService: PrismaService,
     private readonly cardService: CardService) {}
 
-  async startGame(createGameDto: CreateGameDto) {
-    await this.generateUserTurn(createGameDto.lobbyId);
+  async startGame(lobbyId: number) {
+    let createGameDto: CreateGameDto = {
+      lobbyId,
+      id: 0,
+      deck: [],
+      currentCards: []
+    };
+    createGameDto.lobbyId = lobbyId;
+    await this.generateUserTurn(lobbyId);
     createGameDto = await this.generateDeck(createGameDto);
-    createGameDto = await this.generateUsersDeck(createGameDto);
+    const newGame = await this.prismaService.game.create({ data: createGameDto });
+    await this.generateUsersDeck(createGameDto);
+    return newGame.id
   }
 
   async generateUserTurn(lobbyId: number) {

@@ -1,11 +1,15 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { GameService } from './game.service';
 import { CreateGameDto } from './dto/create-game.dto';
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { LocalAuthGuard } from 'src/guards/local.auth.guard';
 import JwtAuthenticationGuard from 'src/authentication/jwt-authentication.guard';
 import HostGuard from 'src/guards/host.guard';
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
+export class gameIdDto {
+  @ApiProperty({ example: 1 })
+  id: number;
+}
 
 @ApiTags('game')
 @Controller('game')
@@ -14,22 +18,11 @@ export class GameController {
 
   @UseGuards(JwtAuthenticationGuard, HostGuard)
   @Get('start')
-  @ApiOperation({ summary: "Start the game" })
-  @ApiCreatedResponse({ type: CreateGameDto })
+  @ApiOperation({ summary: "The host starts the game" })
+  @ApiCreatedResponse({ type: gameIdDto })
   @ApiBadRequestResponse({ description: 'Game doesnt created' })
-  @ApiBody({
-    type: CreateGameDto,
-    description: "To create a game, you need to enter the ID of the lobby, with the help of it, the lobby itself will already be found, in which the ids of the players and the game mode are indicated",
-    examples: {
-        a: {
-            summary: "Start the game with parameters from lobby",
-            description: "Example of start the game",
-            value: { lobbyId: 123 } as CreateGameDto
-        }
-    }
-})
-  async startGame(@Req() request: RequestWithUser, @Body() createGameDto: CreateGameDto) {
-    return this.gameService.startGame(createGameDto);
+  async startGame(@Req() request: RequestWithUser) {
+    return this.gameService.startGame(request.user.lobbyId);
   }
 
 
