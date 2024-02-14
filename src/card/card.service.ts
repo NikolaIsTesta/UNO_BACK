@@ -9,8 +9,6 @@ export class CardService {
     private readonly prismaService: PrismaService,
   ) {}
 
-
-
   async createDeck() {
     const colors = ['red', 'blue', 'green', 'yellow'];
     const values = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'skip', 'reverse', 'draw 2'];
@@ -38,6 +36,15 @@ export class CardService {
         color: 'special', value: 'wild draw 4'
       });
     }
-    return deck;
+
+    const shuffledDeck = this.shuffleDeck(deck);
+    return shuffledDeck;
   }
+    private shuffleDeck(deck: CreateCardDto[]): CreateCardDto[] {
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      return deck;
+    }
 }
