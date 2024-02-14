@@ -1,17 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { GameService } from './game.service';
 import { CreateGameDto } from './dto/create-game.dto';
-import { UpdateGameDto } from './dto/update-game.dto';
 import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CreateLobbyDto } from 'src/lobby/dto/create-lobby.dto';
-import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { LocalAuthGuard } from 'src/guards/local.auth.guard';
+import JwtAuthenticationGuard from 'src/authentication/jwt-authentication.guard';
+import HostGuard from 'src/guards/host.guard';
+import RequestWithUser from 'src/authentication/requestWithUser.interface';
 
 @ApiTags('game')
 @Controller('game')
 export class GameController {
   constructor(private readonly gameService: GameService) {}
 
-  @Post('start')
+  @UseGuards(JwtAuthenticationGuard, HostGuard)
+  @Get('start')
   @ApiOperation({ summary: "Start the game" })
   @ApiCreatedResponse({ type: CreateGameDto })
   @ApiBadRequestResponse({ description: 'Game doesnt created' })
@@ -26,7 +28,7 @@ export class GameController {
         }
     }
 })
-  async startGame(@Body() createGameDto: CreateGameDto) {
+  async startGame(@Req() request: RequestWithUser, @Body() createGameDto: CreateGameDto) {
     return this.gameService.startGame(createGameDto);
   }
 
@@ -34,7 +36,6 @@ export class GameController {
   @Get(':id')
   @ApiOperation({ summary: "Get game data" })
   @ApiOkResponse({ type: CreateGameDto })
-  
   @ApiBadRequestResponse({ description: 'Bad Request' })
   @ApiParam({
     name: 'id',

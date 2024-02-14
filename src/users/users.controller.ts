@@ -14,7 +14,7 @@ export class stateUserDto {
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
+  @Get()
   @ApiOperation({ summary: "Create new user" })
   @ApiCreatedResponse({ type: CreateUserDto })
   @ApiBadRequestResponse({ description: 'User doesnt created' })
