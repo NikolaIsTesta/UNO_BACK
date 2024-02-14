@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateGameDto } from './dto/create-game.dto';
-import { UpdateGameDto } from './dto/update-game.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CardService } from 'src/card/card.service';
-import { Lobby } from 'src/lobby/entities/lobby.entity';
-import { CreateCardDto } from 'src/card/dto/create-card.dto';
 
 @Injectable()
 export class GameService {
@@ -19,12 +16,11 @@ export class GameService {
       deck: [],
       currentCards: []
     };
-    createGameDto.lobbyId = lobbyId;
     await this.generateUserTurn(lobbyId);
     createGameDto = await this.generateDeck(createGameDto);
+    createGameDto = await this.generateUsersDeck(createGameDto);
     const newGame = await this.prismaService.game.create({ data: createGameDto });
-    await this.generateUsersDeck(createGameDto);
-    return newGame.id
+    return { id: newGame.id }
   }
 
   async generateUserTurn(lobbyId: number) {
@@ -69,5 +65,21 @@ export class GameService {
       });
     }
     return createGameDto;
+  }
+
+  async getGameDataFromId(lobbyId: number) {
+    const game = await this.prismaService.game.findFirst({
+       where: { lobbyId },
+       select: {
+        id: true,
+        lobbyId: true,
+        currentCards: true
+       }
+      })
+    if (!game) {
+      return "There is no game session";
+    }
+    else
+      return game;
   }
 }

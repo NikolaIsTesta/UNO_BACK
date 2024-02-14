@@ -16,7 +16,7 @@ export class LobbyService {
       while (!isUniqueCode)
       {
         code = uuidv4().slice(0, 4);
-        const existingLobby = await this.prismaService.lobby.findFirst({ where: {code} });
+        const existingLobby = await this.prismaService.lobby.findFirst({ where: { code } });
         if (!existingLobby)
           {
             isUniqueCode = true;
@@ -38,7 +38,7 @@ export class LobbyService {
         if (count < existingLobby.numPlayers){
           await this.prismaService.user.update({
             where: { id: id },
-            data:  { lobbyId: existingLobby.id},
+            data:  { lobbyId: existingLobby.id}
           });
           return "You have entered the lobby";
         }

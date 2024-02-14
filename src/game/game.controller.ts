@@ -25,19 +25,13 @@ export class GameController {
     return this.gameService.startGame(request.user.lobbyId);
   }
 
-
-  @Get(':id')
+  @UseGuards(JwtAuthenticationGuard)
+  @Get('data')
   @ApiOperation({ summary: "Get game data" })
   @ApiOkResponse({ type: CreateGameDto })
-  @ApiBadRequestResponse({ description: 'Bad Request' })
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description: 'Get all the data about the current game by ID',
-    type: Number
-  })
-  async nothink_3() {
-    return true;
+  @ApiBadRequestResponse({ description: 'There is no game session' })
+  async getGameData(@Req() request: RequestWithUser) {
+    return this.gameService.getGameDataFromId(request.user.lobbyId);
   }
 
 

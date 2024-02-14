@@ -5,16 +5,16 @@ export class CreateGameDto {
     @IsNumber()
     @IsNotEmpty()
     @ApiProperty()
-    id:                number
+    @ApiProperty({ example: 1 })
+    id: number
     @IsNumber()
     @IsNotEmpty()
     @ApiProperty()
-    lobbyId:          number
+    @ApiProperty({ example: 1 })
+    lobbyId: number
     @IsJSON()
-    @ApiProperty()
     deck: { color: string, value: string }[]
     @IsJSON()
-    @ApiProperty()
     spentCards?: { color: string, value: string }[]
     @IsJSON()
     @ApiProperty()
