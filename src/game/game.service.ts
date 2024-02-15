@@ -5,6 +5,7 @@ import { CardService } from 'src/card/card.service';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
+import { number } from 'joi';
 
 @Injectable()
 export class GameService {
@@ -61,7 +62,7 @@ export class GameService {
         let newCardIndex = Math.floor(Math.random() * (createGameDto.deck.length - 1));
         userDeck.push(createGameDto.deck[newCardIndex]);
         createGameDto.deck.splice(newCardIndex, 1);
-        if (userFromLobby[i].numberInTurn == 0 && j == 0)
+        if (userFromLobby[i].numberInTurn == lobby.numPlayers - 1 && j == 0)
           j++;
       }
       await this.prismaService.user.update({
@@ -89,29 +90,22 @@ export class GameService {
   }
 
   async putCardDown( request: RequestWithUser, playerCard: CreateCardDto ) {
-    const userCards = request.user.cards;
-   // await this.getNumberCard(request);
-    // if (userCards && userCards.length > 0) {
-    //   const matchingCards = userCards.filter(card => (card as unknown as CreateCardDto).color  === playerCard.color && (card as unknown as CreateCardDto).value === playerCard.value);
-    //   if (matchingCards.length > 0) {
-    //     console.log("Найдены карты");
-        
-    //   } else {
-    //     console.log('Карты не найдены');
-    //   }
-    // } else {
-    //   console.log('Пользователь не имеет карт');
-    // }
+    const numberCard = await this.getNumberCard(request, playerCard);
+    console.log(numberCard);
+    if (!numberCard) {
+      return "The user does not have such a card"
+    }
   }
 
-  async getNumberCard(request: RequestWithUser, playerCard: CreateCardDto) {
-    const userCards = request.user.cards;
-    let numberCard;
-    for (let i = 0; i < userCards.length; i++) {
-      if ((userCards[i] as unknown as CreateCardDto).color === playerCard.color && (userCards[i] as unknown as CreateCardDto).value === playerCard.value)
-      {
-        numberCard = i;
+  async getNumberCard(request: RequestWithUser, playerCard: CreateCardDto) { 
+    const userCards: any[] = request.user.cards; 
+    let numberCard: number | undefined; 
+    for (let i = 0; i < userCards.length; i++) { 
+      const card = userCards[i] as CreateCardDto;
+      if (card.color === playerCard.color && card.value === playerCard.value) { 
+        numberCard = i; 
       }
     }
+    return numberCard
   }
 }
