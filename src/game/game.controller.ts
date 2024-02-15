@@ -6,6 +6,8 @@ import { LocalAuthGuard } from 'src/guards/local.auth.guard';
 import JwtAuthenticationGuard from 'src/authentication/jwt-authentication.guard';
 import HostGuard from 'src/guards/host.guard';
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
+import { StdioNull } from 'child_process';
+import { CreateCardDto } from 'src/card/dto/create-card.dto';
 export class gameIdDto {
   @ApiProperty({ example: 1 })
   id: number;
@@ -35,23 +37,24 @@ export class GameController {
   }
 
 
-  @Post('motion')
+  @UseGuards(JwtAuthenticationGuard)
+  @Post('motion/card')
   @ApiResponse({ status: 201, description: 'Move has been made successfully.'})
   @ApiBadRequestResponse({ description: 'The move cannot be made' })
   @ApiOperation({ summary: "Make a move" })
   @ApiBody({
     type: CreateGameDto,
-    description: "The request contains the game ID, the ID of the player who made the move and the card that the player used",
+    description: "The request contains card that the player used",
     examples: {
         a: {
             summary: "Make a move",
             description: "Example of a move",
-            value: { id: 321,  lobbyId: 123, currentCards: [{ value: "1", color: "red" }]} as CreateGameDto
+            value: { color: "red",  value: "1" } as unknown as CreateGameDto
         }
     }
 })
-  async nothink_7() {
-    return true;
+  async makeMoveWithCard(@Req() request: RequestWithUser, @Body() playerCard: CreateCardDto) {
+    return this.gameService.putCardDown(request, playerCard);
   }
 
 
