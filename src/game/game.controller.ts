@@ -49,7 +49,7 @@ export class GameController {
         a: {
             summary: "Make a move",
             description: "Example of a move",
-            value: { color: "red",  value: "1" } as unknown as CreateGameDto
+            value: { color: "red",  value: "1",  } as unknown as CreateGameDto
         }
     }
 })

@@ -90,15 +90,16 @@ export class GameService {
   }
 
   async putCardDown( request: RequestWithUser, playerCard: CreateCardDto ) {
-    const numberCard = await this.getNumberCard(request, playerCard);
-    console.log(numberCard);
+    const userCards: any[] = request.user.cards; 
+    const numberCard = await this.getNumberCard(userCards, playerCard);
     if (!numberCard) {
       return "The user does not have such a card"
     }
+    await this.removeCardFromHand(userCards, numberCard, request.user.id)
   }
 
-  async getNumberCard(request: RequestWithUser, playerCard: CreateCardDto) { 
-    const userCards: any[] = request.user.cards; 
+  async getNumberCard(userCards: any[], playerCard: CreateCardDto) { 
+    
     let numberCard: number | undefined; 
     for (let i = 0; i < userCards.length; i++) { 
       const card = userCards[i] as CreateCardDto;
@@ -107,5 +108,13 @@ export class GameService {
       }
     }
     return numberCard
+  }
+
+  async removeCardFromHand(userCards: any[], numberCard: number, userId: number) {
+    userCards.splice(numberCard, 1);
+    await this.prismaService.user.update({
+      where: { id: userId },
+      data: { cards: userCards }
+    })
   }
 }
