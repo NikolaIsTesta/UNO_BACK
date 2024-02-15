@@ -5,7 +5,6 @@ import { CardService } from 'src/card/card.service';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
-import { number } from 'joi';
 
 @Injectable()
 export class GameService {
@@ -14,17 +13,11 @@ export class GameService {
     private readonly cardService: CardService) {}
 
   async startGame(lobbyId: number) {
-    let createGameDto: CreateGameDto = {
-      lobbyId,
-      id: 0,
-      deck: [],
-      currentCards: []
-    };
     await this.generateUserTurn(lobbyId);
-    createGameDto = await this.generateDeck(createGameDto);
-    createGameDto = await this.generateUsersDeck(createGameDto);
-    const newGame = await this.prismaService.game.create({ data: createGameDto });
-    return { id: newGame.id }
+    let newGame = await this.generateDeck({ lobbyId, deck: [], currentCards: [] });
+    newGame = await this.generateUsersDeck(newGame);
+    const createdGame = await this.prismaService.game.create({ data: newGame });
+    return { id: createdGame.id }
   }
 
   async generateUserTurn(lobbyId: number) {
@@ -54,12 +47,16 @@ export class GameService {
   async generateUsersDeck(createGameDto: CreateGameDto) {
     const lobby = await this.prismaService.lobby.findFirst({ where: { id: createGameDto.lobbyId } });
     const userFromLobby = await this.prismaService.user.findMany({ where: { lobbyId: createGameDto.lobbyId } })
+    const colors = ['red', 'blue', 'green', 'yellow'];
     for (let i = 0; i < lobby.numPlayers; i++)
     {
       let userDeck: { color: string, value: string }[] = [];
       for (let j = 0; j < 7; j++)
       {
         let newCardIndex = Math.floor(Math.random() * (createGameDto.deck.length - 1));
+        if (await this.isSpecialCard(createGameDto.deck[newCardIndex])) {
+          createGameDto.deck[newCardIndex].color =  colors[Math.floor(Math.random() * (colors.length - 1))];
+        }
         userDeck.push(createGameDto.deck[newCardIndex]);
         createGameDto.deck.splice(newCardIndex, 1);
         if (userFromLobby[i].numberInTurn == lobby.numPlayers - 1 && j == 0)
@@ -92,10 +89,16 @@ export class GameService {
   async putCardDown( request: RequestWithUser, playerCard: CreateCardDto ) {
     const userCards: any[] = request.user.cards; 
     const numberCard = await this.getNumberCard(userCards, playerCard);
-    if (!numberCard) {
+    if (numberCard === undefined) {
       return "The user does not have such a card"
     }
-    await this.removeCardFromHand(userCards, numberCard, request.user.id)
+    const currentCard = await this.getCurrentCard(request.user.lobbyId);
+    const checkCard = await this.checkingCard(playerCard, currentCard);
+    if (!checkCard){
+      return "It is impossible to use this card"
+    }
+    const game await this.
+    //await this.removeCardFromHand(userCards, numberCard, request.user.id);
   }
 
   async getNumberCard(userCards: any[], playerCard: CreateCardDto) { 
@@ -104,7 +107,8 @@ export class GameService {
     for (let i = 0; i < userCards.length; i++) { 
       const card = userCards[i] as CreateCardDto;
       if (card.color === playerCard.color && card.value === playerCard.value) { 
-        numberCard = i; 
+        numberCard = i;
+        return numberCard; 
       }
     }
     return numberCard
@@ -116,5 +120,42 @@ export class GameService {
       where: { id: userId },
       data: { cards: userCards }
     })
+  }
+
+  async getCurrentCard(lobbyId: number) {
+    const CurrentCardsField = await this.prismaService.game.findFirst({
+      where: { lobbyId },
+      select: { currentCards: true }
+    })
+    const currentCards = CurrentCardsField.currentCards as any[];
+    const currentCard = currentCards[currentCards.length - 1];
+    return currentCard
+  }
+
+  async checkingCard(playerCard: CreateCardDto, currentCard: CreateCardDto) {
+    const special = await this.isSpecialCard(playerCard);
+    if (special){
+      return true
+    }
+    if (playerCard.color === currentCard.color) {
+      return true
+    }
+    else
+      if (playerCard.value === currentCard.value) {
+        return true
+      }
+    return false
+  }
+
+  async isSpecialCard(playerCard: CreateCardDto) {
+    const specialCards = ['wild', 'wild draw 4'];
+    if (specialCards.includes(playerCard.value)) {
+      return true
+    }
+    return false
+  }
+
+  async processingMove(userCards: any[], playerCard: CreateCardDto) {
+    
   }
 }

@@ -6,7 +6,7 @@ export class CreateGameDto {
     @IsNotEmpty()
     @ApiProperty()
     @ApiProperty({ example: 1 })
-    id: number
+    id?: number
     @IsNumber()
     @IsNotEmpty()
     @ApiProperty()
@@ -18,5 +18,5 @@ export class CreateGameDto {
     spentCards?: { color: string, value: string }[]
     @IsJSON()
     @ApiProperty()
-    currentCards: { color: string, value: string }[]
+    currentCards?: { color: string, value: string }[]
 }
