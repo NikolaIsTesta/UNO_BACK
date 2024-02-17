@@ -58,7 +58,14 @@ export class GameController {
     return this.gameService.putCardDown(request, playerCard);
   }
 
-
+  @UseGuards(JwtAuthenticationGuard, PlayerTurnGuard)
+  @Post('motion/take')
+  @ApiResponse({ status: 201, description: 'Move has been made successfully.'})
+  @ApiOperation({ summary: "Take the card" })
+  async makeDrawingMove(@Req() request: RequestWithUser) {
+    return this.gameService.drawingCard(request);
+  }
+  
   @Post('uno-move')
   @ApiOperation({ summary: "Make a UNO-move" })
   @ApiBody({

@@ -5,6 +5,8 @@ CREATE TABLE "Game" (
     "deck" JSONB NOT NULL,
     "spentCards" JSONB,
     "currentCards" JSONB,
+    "currentPlayer" INTEGER DEFAULT 0,
+    "direction" BOOLEAN DEFAULT false,
 
     CONSTRAINT "Game_pkey" PRIMARY KEY ("id")
 );
@@ -22,20 +24,13 @@ CREATE TABLE "Lobby" (
 -- CreateTable
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
-    "nickname" TEXT NOT NULL,
+    "nickname" TEXT,
     "lobbyId" INTEGER,
+    "numberInTurn" INTEGER,
+    "ready" BOOLEAN DEFAULT false,
+    "cards" JSONB[],
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Card" (
-    "id" SERIAL NOT NULL,
-    "color" TEXT NOT NULL,
-    "value" TEXT NOT NULL,
-    "userId" INTEGER,
-
-    CONSTRAINT "Card_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -52,6 +47,3 @@ ALTER TABLE "Game" ADD CONSTRAINT "Game_lobbyId_fkey" FOREIGN KEY ("lobbyId") RE
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_lobbyId_fkey" FOREIGN KEY ("lobbyId") REFERENCES "Lobby"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Card" ADD CONSTRAINT "Card_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;

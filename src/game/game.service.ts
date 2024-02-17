@@ -4,6 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CardService } from 'src/card/card.service';
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
+import { number } from 'joi';
 
 @Injectable()
 export class GameService {
@@ -18,6 +19,7 @@ export class GameService {
     await this.generateUserTurn(lobbyId);
     let newGame = await this.generateDeck({ lobbyId, deck: [], currentCards: [] });
     newGame = await this.generateUsersDeck(newGame);
+    newGame.currentPlayer = 0;
     const createdGame = await this.prismaService.game.create({ data: newGame });
     const currentPlayerId = await this.getCurrentPlayerId(lobbyId, createdGame.currentPlayer);
     return { id: createdGame.id, currentPlayerId: currentPlayerId }
@@ -90,21 +92,23 @@ export class GameService {
   }
 
   async putCardDown( request: RequestWithUser, playerCard: CreateCardDto ) {
+    const lobbyId = request.user.lobbyId
     const userCards: any[] = request.user.cards; 
     const numberCard = await this.getNumberCard(userCards, playerCard);
     if (numberCard === undefined) {
       return "The user does not have such a card"
     }
-    const currentCard = await this.getCurrentCard(request.user.lobbyId);
+    let currentCards = await this.getCurrentCards(lobbyId);
+    const currentCard = currentCards[currentCards.length - 1];
     const checkCard = await this.checkingCard(playerCard, currentCard);
     if (!checkCard){
       return "It is impossible to use this card"
     }
-    const currentCards = await this.processingMove(playerCard, currentCard, request.user.lobbyId);
-    const currentPlayer = await this.chooseNextPlayer(request.user.lobbyId);
-    await this.updateGameData(request.user.lobbyId, currentCards, currentPlayer);
+    currentCards = await this.processingMove(playerCard, currentCard, lobbyId);
+    const nextPlayer = await this.chooseNextPlayer(lobbyId);
+    const nextPlayerId = await this.getCurrentPlayerId(lobbyId, nextPlayer);
     await this.removeCardFromHand(userCards, numberCard, request.user.id);
-    const nextPlayerId = await this.getCurrentPlayerId(request.user.lobbyId, currentPlayer);
+    await this.updateGameData(lobbyId, currentCards, nextPlayer);
     return { nextPlayerId: nextPlayerId };
   }
 
@@ -129,14 +133,13 @@ export class GameService {
     })
   }
 
-  async getCurrentCard(lobbyId: number) {
+  async getCurrentCards(lobbyId: number) {
     const CurrentCardsField = await this.prismaService.game.findFirst({
       where: { lobbyId },
       select: { currentCards: true }
     })
     const currentCards = CurrentCardsField.currentCards as any[];
-    const currentCard = currentCards[currentCards.length - 1];
-    return currentCard
+    return currentCards
   }
 
   async checkingCard(playerCard: CreateCardDto, currentCard: CreateCardDto) {
@@ -159,7 +162,7 @@ export class GameService {
       return true
     }
     else
-      if (playerCard.value === currentCard.value) {
+      if (playerCard.value === currentCard.value || playerCard.value === 'draw 2 used' && currentCard.value === "draw 2 used") {
         return true
       }
     return false
@@ -221,7 +224,7 @@ export class GameService {
   async chooseNextPlayer(lobbyId: number) {
     const game = await this.prismaService.game.findFirst({ where: { lobbyId } });
     const lobby = await this.prismaService.lobby.findFirst({ where: { id: lobbyId } });
-    const sizeLobby = lobby.numPlayers - 1;
+    const sizeLobby = lobby.numPlayers;
     let currentPlayer = game.currentPlayer
     if (game.direction == false) {
       currentPlayer = (currentPlayer + 1) % sizeLobby;
@@ -243,10 +246,75 @@ export class GameService {
   }
 
   async getCurrentPlayerId(lobbyId: number, currentPlayer: number) {
-    return await this.prismaService.user.findFirst({ where: {
+    const user = await this.prismaService.user.findFirst({ where: {
       lobbyId,
       numberInTurn: currentPlayer 
-      } 
+      }
+    });
+    return user.id
+  }
+
+
+  async drawingCard( request: RequestWithUser) {
+    const lobbyId = request.user.lobbyId
+    let currentCards = await this.getCurrentCards(lobbyId);
+    let countCards = 0;
+    if (await this.isDrawCard(currentCards[0])) {
+      countCards = await this.sumDrawingCards(currentCards);
+      const newCurrentCards = currentCards[currentCards.length - 1] as CreateCardDto;
+       newCurrentCards.value = "Draw 2 used";
+
+
+
+    }
+    else {
+      countCards = 1;
+    }
+    const cardsTaken = await this.takeCardFromDeck(countCards, lobbyId);
+    await this.updateUserCards(cardsTaken, request.user.id);
+    const nextPlayer = await this.chooseNextPlayer(lobbyId);
+    const nextPlayerId = await this.getCurrentPlayerId(request.user.lobbyId, nextPlayer);
+    await this.updateGameData(lobbyId, currentCards, nextPlayer);
+    return { nextPlayerId: nextPlayerId };
+  }
+
+  async takeCardFromDeck(count: number, lobbyId: number) {
+    const game = await this.findOne(lobbyId);
+    const deck = game.deck as any[];
+    let cardsTaken = [] as CreateCardDto[];
+    for (let i = 0; i < count; i++) {
+      cardsTaken.push(deck[deck.length - 1]);
+    }
+    return cardsTaken;
+  }
+
+  async sumDrawingCards(currentCards: any[]) {
+    let currentCard: CreateCardDto;
+    let sumDrawingCards = 0;
+    for (let i = 0; i < currentCards.length; i++) {
+      currentCard = currentCards[i];
+      sumDrawingCards += await this.DrawingCardToNumber(currentCard);
+    }
+    return sumDrawingCards;
+  }
+
+  async DrawingCardToNumber(currentCard: CreateCardDto) {
+    switch (currentCard.value) {
+      case 'draw 2': return 2;
+      case 'wild draw 4': return 4;
+      default: return 0;
+    }
+  }
+
+  async updateUserCards(cardsTaken: any[], userId: number) {
+    const user = await this.prismaService.user.findFirst({ where: { id:userId } });
+    let userDeck = user.cards as any[];
+    for (let i = 0; i < cardsTaken.length; i++) {
+      userDeck.push(cardsTaken[i]);
+    }
+    await this.prismaService.user.update({
+      where: { id: userId },
+      data: { cards: userDeck }
     });
   }
 }
