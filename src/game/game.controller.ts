@@ -8,9 +8,11 @@ import HostGuard from 'src/guards/host.guard';
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
 import { StdioNull } from 'child_process';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
-export class gameIdDto {
+export class gameSartDto {
   @ApiProperty({ example: 1 })
   id: number;
+  @ApiProperty({ example: 1 })
+  currentPlayerId: number
 }
 
 @ApiTags('game')
@@ -21,7 +23,7 @@ export class GameController {
   @UseGuards(JwtAuthenticationGuard, HostGuard)
   @Get('start')
   @ApiOperation({ summary: "The host starts the game" })
-  @ApiCreatedResponse({ type: gameIdDto })
+  @ApiCreatedResponse({ type: gameSartDto })
   @ApiBadRequestResponse({ description: 'Game doesnt created' })
   async startGame(@Req() request: RequestWithUser) {
     return this.gameService.startGame(request.user.lobbyId);
