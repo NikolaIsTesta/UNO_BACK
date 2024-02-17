@@ -2,12 +2,11 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } fro
 import { GameService } from './game.service';
 import { CreateGameDto } from './dto/create-game.dto';
 import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { LocalAuthGuard } from 'src/guards/local.auth.guard';
 import JwtAuthenticationGuard from 'src/authentication/jwt-authentication.guard';
 import HostGuard from 'src/guards/host.guard';
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
-import { StdioNull } from 'child_process';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
+import PlayerTurnGuard from 'src/guards/player.turn.guard';
 export class gameSartDto {
   @ApiProperty({ example: 1 })
   id: number;
@@ -39,7 +38,7 @@ export class GameController {
   }
 
 
-  @UseGuards(JwtAuthenticationGuard)
+  @UseGuards(JwtAuthenticationGuard, PlayerTurnGuard)
   @Post('motion/card')
   @ApiResponse({ status: 201, description: 'Move has been made successfully.'})
   @ApiBadRequestResponse({ description: 'The move cannot be made' })

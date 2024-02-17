@@ -8,19 +8,15 @@ export default class HostGuard implements CanActivate {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const { user, params } = context.switchToHttp().getRequest();
-
         if (!user) {
             return false;
         }
-
         const userId = user.id;
         const lobbyId = user.lobbyId;
         const lobby = await this.lobbyService.findOne(lobbyId);
-
         if (!lobby) {
             return false;
         }
-
         return lobby.hostId === userId;
     }
 }

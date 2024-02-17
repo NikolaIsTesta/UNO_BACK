@@ -11,12 +11,15 @@ export class GameService {
     private readonly prismaService: PrismaService,
     private readonly cardService: CardService) {}
 
+  async findOne(lobbyId: number) {
+    return await this.prismaService.game.findFirst({ where: { lobbyId } })
+  }
   async startGame(lobbyId: number) {
     await this.generateUserTurn(lobbyId);
     let newGame = await this.generateDeck({ lobbyId, deck: [], currentCards: [] });
     newGame = await this.generateUsersDeck(newGame);
     const createdGame = await this.prismaService.game.create({ data: newGame });
-    const currentPlayerId = await this.getNextPlayerId(lobbyId, createdGame.currentPlayer);
+    const currentPlayerId = await this.getCurrentPlayerId(lobbyId, createdGame.currentPlayer);
     return { id: createdGame.id, currentPlayerId: currentPlayerId }
   }
 
@@ -101,7 +104,7 @@ export class GameService {
     const currentPlayer = await this.chooseNextPlayer(request.user.lobbyId);
     await this.updateGameData(request.user.lobbyId, currentCards, currentPlayer);
     await this.removeCardFromHand(userCards, numberCard, request.user.id);
-    const nextPlayerId = await this.getNextPlayerId(request.user.lobbyId, currentPlayer);
+    const nextPlayerId = await this.getCurrentPlayerId(request.user.lobbyId, currentPlayer);
     return { nextPlayerId: nextPlayerId };
   }
 
@@ -239,7 +242,7 @@ export class GameService {
     })
   }
 
-  async getNextPlayerId(lobbyId: number, currentPlayer: number) {
+  async getCurrentPlayerId(lobbyId: number, currentPlayer: number) {
     return await this.prismaService.user.findFirst({ where: {
       lobbyId,
       numberInTurn: currentPlayer 
