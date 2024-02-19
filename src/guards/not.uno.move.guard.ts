@@ -2,7 +2,7 @@ import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { GameService } from 'src/game/game.service';
 
 @Injectable()
-export default class PlayerTurnGuard implements CanActivate {
+export default class NotUnoMove implements CanActivate {
     constructor(private readonly gameService: GameService) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -16,7 +16,7 @@ export default class PlayerTurnGuard implements CanActivate {
         if (!game) {
             return false;
         }
-        const currentPlayerId = await this.gameService.getCurrentPlayerId(lobbyId, game.currentPlayer);
-        return currentPlayerId === userId;
+        const UNO = !game.UNO;
+        return UNO;
     }
 }

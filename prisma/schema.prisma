@@ -13,7 +13,7 @@ datasource db {
 model Game{
     id                Int            @id @default(autoincrement())
     lobbyId           Int            @unique
-    deck              Json
+    deck              Json?
     spentCards        Json?
     currentCards      Json?
     currentPlayer     Int?           @default(0)
@@ -39,5 +39,5 @@ model User {
   numberInTurn      Int?
   ready             Boolean?          @default(false)
   lobby             Lobby?            @relation(fields: [lobbyId], references: [id])
-  cards             Json[]
+  cards             Json?
 }

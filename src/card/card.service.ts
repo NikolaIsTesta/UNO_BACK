@@ -40,11 +40,12 @@ export class CardService {
     const shuffledDeck = this.shuffleDeck(deck);
     return shuffledDeck;
   }
-    private shuffleDeck(deck: CreateCardDto[]): CreateCardDto[] {
-      for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [deck[i], deck[j]] = [deck[j], deck[i]];
-      }
-      return deck;
+
+  async shuffleDeck(deck: CreateCardDto[]) {
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
     }
+    return deck;
+  }
 }

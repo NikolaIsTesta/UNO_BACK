@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsUUID, IsJSON, IsNumber} from 'class-validator';
+import { IsNotEmpty, IsJSON, IsNumber, IsBoolean} from 'class-validator';
+import { CreateCardDto } from 'src/card/dto/create-card.dto';
 
 export class CreateGameDto {
     @IsNumber()
@@ -13,7 +14,7 @@ export class CreateGameDto {
     @ApiProperty({ example: 1 })
     lobbyId: number
     @IsJSON()
-    deck: { color: string, value: string }[]
+    deck?: { color: string, value: string }[]
     @IsJSON()
     spentCards?: { color: string, value: string }[]
     @IsNumber()
@@ -21,4 +22,9 @@ export class CreateGameDto {
     @IsJSON()
     @ApiProperty()
     currentCards?: { color: string, value: string }[]
+    @IsBoolean()
+    direction?: boolean
+    @IsBoolean()
+    @ApiProperty()
+    UNO?: boolean
 }

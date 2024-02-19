@@ -36,8 +36,8 @@ export class UsersController {
             value: {nickname: "ReiFanta"} as CreateUserDto
         }
     }})
-  update(@Req() request: RequestWithUser, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(request.user.id, updateUserDto);
+  update(@Req() request: RequestWithUser, @Body() nickname: string) {
+    return this.usersService.updateNickname(request.user.id, nickname);
   }
 
   @UseGuards(JwtAuthenticationGuard)
@@ -46,7 +46,6 @@ export class UsersController {
   @ApiOkResponse({ type: stateUserDto })
   @ApiBadRequestResponse({ description: 'Bad request' })
   switchReadyField(@Req() request: RequestWithUser) {
-    return this.usersService.updateFieldReady(request.user);
-  
+    return this.usersService.updateFieldReady(request.user.id);
   }
 }

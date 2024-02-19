@@ -105,6 +105,6 @@ export class LobbyController {
     type: Number
   })
   async kickPlayer(@Param('id') id: string, @Req() request: RequestWithUser) {
-    return this.lobbyService.kickUserFromLobby(+id, request.user);
+    return this.lobbyService.kickUserFromLobby(+id, request.user.id);
   }
 }

@@ -7,6 +7,7 @@ import HostGuard from 'src/guards/host.guard';
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import PlayerTurnGuard from 'src/guards/player.turn.guard';
+import NotUnoMove from 'src/guards/not.uno.move.guard';
 export class gameSartDto {
   @ApiProperty({ example: 1 })
   id: number;
@@ -38,7 +39,7 @@ export class GameController {
   }
 
 
-  @UseGuards(JwtAuthenticationGuard, PlayerTurnGuard)
+  @UseGuards(JwtAuthenticationGuard, PlayerTurnGuard, NotUnoMove)
   @Post('motion/card')
   @ApiResponse({ status: 201, description: 'Move has been made successfully.'})
   @ApiBadRequestResponse({ description: 'The move cannot be made' })
@@ -58,7 +59,7 @@ export class GameController {
     return this.gameService.putCardDown(request, playerCard);
   }
 
-  @UseGuards(JwtAuthenticationGuard, PlayerTurnGuard)
+  @UseGuards(JwtAuthenticationGuard, PlayerTurnGuard, NotUnoMove)
   @Post('motion/take')
   @ApiResponse({ status: 201, description: 'Move has been made successfully.'})
   @ApiOperation({ summary: "Take the card" })
@@ -66,21 +67,15 @@ export class GameController {
     return this.gameService.drawingCard(request);
   }
   
+  @UseGuards(JwtAuthenticationGuard)
   @Post('uno-move')
   @ApiOperation({ summary: "Make a UNO-move" })
   @ApiBody({
     type: CreateGameDto,
     description: "The processing of the game situation is 'UNO', the request indicates the ID of the game and the player who first pressed the button",
-    examples: {
-        a: {
-            summary: "Make a UNO-move",
-            description: "Example of a move",
-            value: { id: 321,  lobbyId: 123 } as CreateGameDto
-        }
-    }
 })
-  async nothink_5() {
-    return true;
+  async unoMove(@Req() request: RequestWithUser) {
+    return await this.gameService.makeUnoMove(request.user.id);
   }
-  
+
 }

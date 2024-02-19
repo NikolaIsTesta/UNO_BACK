@@ -19,7 +19,7 @@ export class authUserDto {
   @ApiProperty({ example: true })
   ready: boolean
   @ApiProperty()
-  cards: JSON
+  cards: { color: string, value: string }[]
 }
 
 @ApiTags('auth')

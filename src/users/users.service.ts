@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { use } from 'passport';
 
 @Injectable()
 export class UsersService {
@@ -13,14 +14,14 @@ export class UsersService {
     data: {}, 
   }); 
   newUser.nickname = "Игрок" + newUser.id.toString();
-  newUser = await this.update(newUser.id, newUser);
+  newUser = await this.updateNickname(newUser.id, newUser.nickname);
   return { id: newUser.id, nickname: newUser.nickname };;
 }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async updateNickname(id: number, newNickname: string) {
     return await this.prismaService.user.update({
       where: { id: id },
-      data: updateUserDto,
+      data: { nickname: newNickname },
     });
   }
   
@@ -37,7 +38,8 @@ export class UsersService {
     throw new HttpException('User with this id does not exist', HttpStatus.NOT_FOUND);
   }
 
-  async updateFieldReady(user: CreateUserDto) {
+  async updateFieldReady(userId: number) {
+    const user = await this.prismaService.user.findFirst({ where: { id:userId } })
     if (user.lobbyId) {
       const state = !user.ready;
       return await this.prismaService.user.update({
