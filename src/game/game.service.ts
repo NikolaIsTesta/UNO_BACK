@@ -4,7 +4,6 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CardService } from 'src/card/card.service';
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
-import { number } from 'joi';
 
 @Injectable()
 export class GameService {
@@ -162,7 +161,7 @@ export class GameService {
       return true
     }
     else
-      if (playerCard.value === currentCard.value || playerCard.value === 'draw 2 used' && currentCard.value === "draw 2 used") {
+      if (playerCard.value === currentCard.value || playerCard.value === 'draw 2' && currentCard.value === "draw 2 used") {
         return true
       }
     return false
@@ -183,6 +182,11 @@ export class GameService {
       currentCards.push(playerCard);
       return currentCards;
     }
+    if (await this.isDrawUsedCard(currentCard)) {
+      currentCard.value = currentCard.value.replace(' used', '');
+      currentCards = [currentCard];
+    }
+    await this.spendCards(currentCards, lobbyId);
     currentCards = [playerCard];
     switch (currentCards[0]) {
       case 'reverse':
@@ -262,14 +266,17 @@ export class GameService {
     if (await this.isDrawCard(currentCards[0])) {
       countCards = await this.sumDrawingCards(currentCards);
       const newCurrentCards = currentCards[currentCards.length - 1] as CreateCardDto;
-       newCurrentCards.value = "Draw 2 used";
-
-
-
+      if (newCurrentCards.value === "draw 2")
+        newCurrentCards.value = "draw 2 used";
+      else
+        if (newCurrentCards.value === "wild draw 4")
+          newCurrentCards.value = "wild draw 4 used";
     }
     else {
       countCards = 1;
     }
+    let spentCards = currentCards.slice(0, currentCards.length - 1);
+    await this.spendCards(spentCards, lobbyId);
     const cardsTaken = await this.takeCardFromDeck(countCards, lobbyId);
     await this.updateUserCards(cardsTaken, request.user.id);
     const nextPlayer = await this.chooseNextPlayer(lobbyId);
@@ -316,5 +323,47 @@ export class GameService {
       where: { id: userId },
       data: { cards: userDeck }
     });
+  }
+
+  async switchUno(lobbyId: number) {
+    const game = await this.findOne(lobbyId);
+    const UNO = game.UNO;
+    await this.prismaService.game.update({
+       where: { lobbyId },
+       data: { UNO: !UNO }
+       })
+  }
+
+  async getCountUserCards(userId: number) {
+    const user = await this.prismaService.user.findFirst({ where: { id: userId } });
+    const userDeck = user.cards as any[];
+    const countUserCards = userDeck.length;
+    return countUserCards;
+  }
+
+  async getCountGameDeckCards(lobbyId: number) {
+    const game = await this.findOne(lobbyId);
+    const gameDeck = await this.getCurrentCards(lobbyId);
+    const countGameDeck = gameDeck.length;
+    return countGameDeck;
+  }
+
+  async spendCards(cards: any[], lobbyId: number) {
+    const game = await this.findOne(lobbyId);
+    const spentCards = game.spentCards as any[];
+    for (let i = 0; i < cards.length; i++) {
+      spentCards.push(cards[i]);
+    }
+    await this.prismaService.game.update({
+      where: { lobbyId },
+      data: { spentCards }
+    })
+  }
+
+  async isDrawUsedCard(card: CreateCardDto) {
+    if (card.value === "draw 2 used" || card.value === "wild draw 4 used") {
+      return true;
+    }
+    return false;
   }
 }
