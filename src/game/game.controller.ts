@@ -9,6 +9,7 @@ import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import PlayerTurnGuard from 'src/guards/player.turn.guard';
 import NotUnoMove from 'src/guards/not.uno.move.guard';
 import LobbyFilledGuard from 'src/guards/lobby.filled.guard';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
 export class gameStartDto {
   @ApiProperty({ example: 1 })
@@ -37,7 +38,8 @@ export class GameController {
   @ApiOkResponse({ type: CreateGameDto })
   @ApiBadRequestResponse({ description: 'There is no game session' })
   async getGameData(@Req() request: RequestWithUser) {
-    return this.gameService.getGameDataFromId(request.user.lobbyId);
+    const user = request.user as CreateUserDto;
+    return this.gameService.getGameDataFromId(user);
   }
 
 

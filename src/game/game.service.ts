@@ -101,7 +101,8 @@ export class GameService {
     return createGameDto;
   }
 
-  async getGameDataFromId(lobbyId: number) {
+  async getGameDataFromId(user: CreateUserDto) {
+    const lobbyId = user.lobbyId;
     const game = await this.prismaService.game.findFirst({
        where: { lobbyId },
        select: {
@@ -113,7 +114,7 @@ export class GameService {
     if (!game) {
       return "There is no game session";
     }
-    else
+    const countCards = await this.getCountUserCards(user.id);
       return game;
   }
 
@@ -136,11 +137,16 @@ export class GameService {
     const userId = request.user.id;
     await this.removeCardFromHand(userCards, numberCard, userId);
     const countUserCards = await this.getCountUserCards(userId);
-    if (countUserCards === 1) {
-      await this.prismaService.game.update({ 
-        where: { lobbyId },
-        data: { UNO: true }
-       })
+    switch (countUserCards) {
+      case 0: 
+        return await this.endGame(lobbyId, userId);
+      case 1: 
+        await this.prismaService.game.update({ 
+          where: { lobbyId },
+          data: { UNO: true }
+        });
+       break;
+      default: break;
     }
     await this.updateGameData(lobbyId, currentCards, nextPlayer);
     return { nextPlayerId: nextPlayerId };
@@ -371,10 +377,6 @@ export class GameService {
       where: { id: userId },
       data: { cards: userDeck }
     });
-    
-    
-    
-    
   }
 
   async switchUno(lobbyId: number) {
@@ -481,5 +483,18 @@ export class GameService {
       where: { id: userId },
       data: { cards: [] }
     })
+  }
+
+  async endGame (lobbyId: number, userId: number) {
+    const game = await this.findOne(lobbyId);
+    await this.prismaService.game.delete({ where: { lobbyId } });
+    const user = await this.prismaService.user.findFirst({ 
+      where: { id: userId }, 
+      select: { 
+        id: true, 
+        nickname: true 
+      } 
+    })
+    const winMessage = user;
   }
 }
