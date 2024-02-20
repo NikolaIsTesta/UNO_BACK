@@ -73,7 +73,6 @@ export class LobbyService {
     }
 
     async getAllPlayersInLobby(id:number){
-      console.log(id);
       const existingLobby = await this.prismaService.lobby.findFirst({ where: { id }})
       if (!existingLobby) {
         return "Lobby does not exist"
@@ -93,7 +92,8 @@ export class LobbyService {
       const host = await this.prismaService.user.findFirst({ where: { id:hostId } })
       const lobby = await this.prismaService.lobby.findFirst({ where:{ id: host.lobbyId } })
       const playersFromLobby = await this.getAllPlayersInLobby(lobby.id) as CreateUserDto[];
-      if (!playersFromLobby.includes({id: playerId})) {
+      const playerExists = playersFromLobby.some(player => player.id === playerId);
+      if (!playerExists) {
         throw new HttpException('This player does not exist in your lobby', HttpStatus.NOT_FOUND);
       }
       const player = await this.prismaService.user.findFirst({ where:{ id: playerId} })

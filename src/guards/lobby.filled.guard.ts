@@ -24,11 +24,11 @@ export default class LobbyFilledGuard implements CanActivate {
         const usersReadyField = userFromLobby.map(user => user.ready);
         const anyNotReadyPlayer = usersReadyField.includes(false);
         if (lobbyNumberPlayer !== numberUserFromLobby) {
-            throw new HttpException('Not all players are ready', HttpStatus.FORBIDDEN);
+            throw new HttpException('The lobby is not full', HttpStatus.FORBIDDEN);
         }
         else 
             if (anyNotReadyPlayer) {
-            throw new HttpException('The lobby is not full', HttpStatus.FORBIDDEN);
+            throw new HttpException('Not all players are ready', HttpStatus.FORBIDDEN);
         }
         return true;
     }

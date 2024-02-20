@@ -360,7 +360,10 @@ export class GameService {
 
   async updateUserCards(cardsTaken: any[], userId: number) {
     const user = await this.prismaService.user.findFirst({ where: { id:userId } }) as CreateUserDto;
-    const userDeck = user.cards;
+    let userDeck = user.cards;
+    if (!userDeck) {
+      userDeck = [];
+    }
     userDeck.push(...cardsTaken);
     await this.prismaService.user.update({
       where: { id: userId },
