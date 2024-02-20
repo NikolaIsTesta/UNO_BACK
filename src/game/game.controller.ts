@@ -8,7 +8,9 @@ import RequestWithUser from 'src/authentication/requestWithUser.interface';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import PlayerTurnGuard from 'src/guards/player.turn.guard';
 import NotUnoMove from 'src/guards/not.uno.move.guard';
-export class gameSartDto {
+import LobbyFilledGuard from 'src/guards/lobby.filled.guard';
+
+export class gameStartDto {
   @ApiProperty({ example: 1 })
   id: number;
   @ApiProperty({ example: 1 })
@@ -20,10 +22,10 @@ export class gameSartDto {
 export class GameController {
   constructor(private readonly gameService: GameService) {}
 
-  @UseGuards(JwtAuthenticationGuard, HostGuard)
+  @UseGuards(JwtAuthenticationGuard, HostGuard, LobbyFilledGuard)
   @Get('start')
   @ApiOperation({ summary: "The host starts the game" })
-  @ApiCreatedResponse({ type: gameSartDto })
+  @ApiCreatedResponse({ type: gameStartDto })
   @ApiBadRequestResponse({ description: 'Game doesnt created' })
   async startGame(@Req() request: RequestWithUser) {
     return this.gameService.startGame(request.user.lobbyId);
@@ -70,10 +72,8 @@ export class GameController {
   @UseGuards(JwtAuthenticationGuard)
   @Post('uno-move')
   @ApiOperation({ summary: "Make a UNO-move" })
-  @ApiBody({
-    type: CreateGameDto,
-    description: "The processing of the game situation is 'UNO', the request indicates the ID of the game and the player who first pressed the button",
-})
+  @ApiCreatedResponse({ status: 201, description: 'Move has been made successfully.'})
+  @ApiBadRequestResponse({ description: 'Game doesnt created' })
   async unoMove(@Req() request: RequestWithUser) {
     return await this.gameService.makeUnoMove(request.user.id);
   }

@@ -7,7 +7,7 @@ export default class HostGuard implements CanActivate {
     constructor(private readonly usersService: UsersService, private readonly lobbyService: LobbyService) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, params } = context.switchToHttp().getRequest();
+        const { user } = context.switchToHttp().getRequest();
         if (!user) {
             return false;
         }

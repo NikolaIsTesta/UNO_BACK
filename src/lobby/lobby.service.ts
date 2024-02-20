@@ -80,7 +80,7 @@ export class LobbyService {
           select: {
             id: true,
             nickname: true,
-            ready: true
+            ready: true,
           }
         });
       }
@@ -107,4 +107,5 @@ export class LobbyService {
    async findOne(id: number) {
       return await this.prismaService.lobby.findFirst({ where: { id } });
   }
+
 }

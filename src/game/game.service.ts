@@ -5,6 +5,7 @@ import { CardService } from 'src/card/card.service';
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { LobbyService } from 'src/lobby/lobby.service';
 
 async function throwBadRequestException(message: string) {
   throw new BadRequestException(message);
@@ -35,7 +36,8 @@ async function getGameFromDatabase(lobbyId: number): Promise<CreateGameDto> {
 export class GameService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly cardService: CardService) {}
+    private readonly cardService: CardService,
+    private readonly lobbyService: LobbyService) {}
 
   async findOne(lobbyId: number) {
     return await this.prismaService.game.findFirst({ where: { lobbyId } }) as CreateGameDto;
@@ -458,5 +460,10 @@ export class GameService {
       data: { cards: unoPlayerDeck }
      })
      return player;
+  }
+
+  async checkLobbyReady (lobbyId: number) {
+    const lobby = await this.prismaService.lobby.findUnique({ where: { id: lobbyId } });
+
   }
 }
