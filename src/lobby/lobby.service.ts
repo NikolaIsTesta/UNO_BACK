@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateLobbyDto } from './dto/create-lobby.dto';
 import { UpdateLobbyDto } from './dto/update-lobby.dto';
 import { v4 as uuidv4 } from 'uuid';
@@ -73,8 +73,11 @@ export class LobbyService {
     }
 
     async getAllPlayersInLobby(id:number){
+      console.log(id);
       const existingLobby = await this.prismaService.lobby.findFirst({ where: { id }})
-      if (existingLobby) {
+      if (!existingLobby) {
+        return "Lobby does not exist"
+      }
         return await this.prismaService.user.findMany({ 
           where: { lobbyId: id },
           select: {
@@ -83,14 +86,16 @@ export class LobbyService {
             ready: true,
           }
         });
-      }
-      else
-        return "Lobby does not exist"
+
     }
 
     async kickUserFromLobby(playerId: number, hostId: number){
       const host = await this.prismaService.user.findFirst({ where: { id:hostId } })
       const lobby = await this.prismaService.lobby.findFirst({ where:{ id: host.lobbyId } })
+      const playersFromLobby = await this.getAllPlayersInLobby(lobby.id) as CreateUserDto[];
+      if (!playersFromLobby.includes({id: playerId})) {
+        throw new HttpException('This player does not exist in your lobby', HttpStatus.NOT_FOUND);
+      }
       const player = await this.prismaService.user.findFirst({ where:{ id: playerId} })
       if (lobby.hostId == playerId) {
         return "You can't kick yourself"
