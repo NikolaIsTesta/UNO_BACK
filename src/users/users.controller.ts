@@ -36,8 +36,8 @@ export class UsersController {
             value: {nickname: "ReiFanta"} as CreateUserDto
         }
     }})
-  update(@Req() request: RequestWithUser, @Body() nickname: string) {
-    return this.usersService.updateNickname(request.user.id, nickname);
+  updateNickname(@Req() request: RequestWithUser, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.updateNickname(request.user.id, updateUserDto.nickname);
   }
 
   @UseGuards(JwtAuthenticationGuard)

@@ -21,7 +21,7 @@ export class UsersService {
   async updateNickname(id: number, newNickname: string) {
     return await this.prismaService.user.update({
       where: { id: id },
-      data: { nickname: newNickname },
+      data: { nickname: newNickname }
     });
   }
   
