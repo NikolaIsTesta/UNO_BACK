@@ -367,10 +367,14 @@ export class GameService {
       userDeck = [];
     }
     userDeck.push(...cardsTaken);
-    const user2 = await this.prismaService.user.update({
+    await this.prismaService.user.update({
       where: { id: userId },
       data: { cards: userDeck }
     });
+    
+    
+    
+    
   }
 
   async switchUno(lobbyId: number) {
