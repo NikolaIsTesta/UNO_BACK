@@ -83,6 +83,7 @@ export class GameService {
     for (let i = 0; i < lobby.numPlayers; i++)
     {
       let userDeck: CreateCardDto[] = [];
+      let userId = userFromLobby[i].id;
       for (let j = 0; j < 7; j++)
       {
         let newCardIndex = Math.floor(Math.random() * (createGameDto.deck.length - 1));
@@ -94,7 +95,8 @@ export class GameService {
         if (userFromLobby[i].numberInTurn == lobby.numPlayers - 1 && j == 0)
           j++;
       }
-      await this.updateUserCards (userDeck, userFromLobby[i].id);
+      await this.clearPlayersCards(userId);
+      await this.updateUserCards (userDeck, userId);
     }
     return createGameDto;
   }
@@ -365,7 +367,7 @@ export class GameService {
       userDeck = [];
     }
     userDeck.push(...cardsTaken);
-    await this.prismaService.user.update({
+    const user2 = await this.prismaService.user.update({
       where: { id: userId },
       data: { cards: userDeck }
     });
@@ -468,5 +470,12 @@ export class GameService {
   async checkLobbyReady (lobbyId: number) {
     const lobby = await this.prismaService.lobby.findUnique({ where: { id: lobbyId } });
 
+  }
+
+  async clearPlayersCards (userId: number) {
+    await this.prismaService.user.update({
+      where: { id: userId },
+      data: { cards: [] }
+    })
   }
 }
