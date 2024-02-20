@@ -114,8 +114,16 @@ export class GameService {
     if (!game) {
       return "There is no game session";
     }
-    const countCards = await this.getCountUserCards(user.id);
-      return game;
+    const usersFromLobby = await this.prismaService.user.findMany({ where: { lobbyId } })
+    const userCardsField = usersFromLobby.map(user => ({ id: user.id, countCardsards: user.cards.length }));
+    const gameData = {
+      gameID: game.id,
+      lobbyID: game.lobbyId,
+      currentCards: game.currentCards,
+      currentPlayerCards: user.cards,
+      userCardsField
+    };
+    return gameData;
   }
 
   async putCardDown( request: RequestWithUser, playerCard: CreateCardDto ) {
@@ -495,6 +503,6 @@ export class GameService {
         nickname: true 
       } 
     })
-    const winMessage = user;
+    return user;
   }
 }
