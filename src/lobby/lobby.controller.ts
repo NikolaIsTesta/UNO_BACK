@@ -5,6 +5,7 @@ import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiExtraModels, Api
 import JwtAuthenticationGuard from 'src/authentication/jwt-authentication.guard';
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
 import HostGuard from 'src/guards/host.guard';
+import IsUserInLobbyGuard from 'src/guards/user-in-lobby.guard';
 export class hostIdLobbyDto {
   @ApiProperty({ example: 1 })
   hostId: number;
@@ -66,7 +67,7 @@ export class LobbyController {
   }
 
 
-  @UseGuards(JwtAuthenticationGuard)
+  @UseGuards(JwtAuthenticationGuard, IsUserInLobbyGuard)
   @Post('exit')
   @ApiOperation({ summary: "Exit the lobby" })
   @ApiOkResponse({ description: 'Exit from the lobby was successfully completed.'})
@@ -75,7 +76,7 @@ export class LobbyController {
     return this.lobbyService.exitLobby(request.user.id);
   }
 
-  @UseGuards(JwtAuthenticationGuard)
+  @UseGuards(JwtAuthenticationGuard, IsUserInLobbyGuard)
   @Get("hostId")
   @ApiOperation({ summary: "Get the ID of the lobby host" })
   @ApiOkResponse({ type: hostIdLobbyDto })
@@ -84,7 +85,7 @@ export class LobbyController {
     return this.lobbyService.getHostIdFromIdLobby(request.user.lobbyId);
   }
 
-  @UseGuards(JwtAuthenticationGuard)
+  @UseGuards(JwtAuthenticationGuard, IsUserInLobbyGuard)
   @UseGuards()
   @Get('players')
   @ApiOperation({ summary: 'Get list of players in the lobby' })

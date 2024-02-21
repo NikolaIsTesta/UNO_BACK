@@ -6,9 +6,9 @@ import JwtAuthenticationGuard from 'src/authentication/jwt-authentication.guard'
 import HostGuard from 'src/guards/host.guard';
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
-import PlayerTurnGuard from 'src/guards/player.turn.guard';
-import NotUnoMove from 'src/guards/not.uno.move.guard';
-import LobbyFilledGuard from 'src/guards/lobby.filled.guard';
+import PlayerTurnGuard from 'src/guards/player-turn.guard';
+import NotUnoMove from 'src/guards/not-uno-move.guard';
+import LobbyFilledGuard from 'src/guards/lobby-filled.guard';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
 export class gameStartDto {
