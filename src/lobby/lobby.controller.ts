@@ -6,6 +6,7 @@ import JwtAuthenticationGuard from 'src/authentication/jwt-authentication.guard'
 import RequestWithUser from 'src/authentication/requestWithUser.interface';
 import HostGuard from 'src/guards/host.guard';
 import IsUserInLobbyGuard from 'src/guards/user-in-lobby.guard';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
 export class hostIdLobbyDto {
   @ApiProperty({ example: 1 })
   hostId: number;
@@ -107,5 +108,12 @@ export class LobbyController {
   })
   async kickPlayer(@Param('id') id: string, @Req() request: RequestWithUser) {
     return this.lobbyService.kickUserFromLobby(+id, request.user.id);
+  }
+
+  @UseGuards(JwtAuthenticationGuard)
+  @Get('/data')
+  async getLobbyData(@Param('id') id: string, @Req() request: RequestWithUser) {
+    const user = request.user as CreateUserDto;
+    return this.lobbyService.lobbyData(user);
   }
 }

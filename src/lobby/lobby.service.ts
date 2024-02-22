@@ -112,5 +112,16 @@ export class LobbyService {
    async findOne(id: number) {
       return await this.prismaService.lobby.findFirst({ where: { id } });
   }
+  
+  async lobbyData(user: CreateUserDto) {
+    const lobby = await this.findOne(user.lobbyId);
+    const lobbyUsers = await this.getAllPlayersInLobby(lobby.id);
+    const lobbyData = {
+      maxPlayers: lobby.numPlayers,
+      countPlayers: lobbyUsers.length,
+      lobbyCode: lobby.code
+    }
+    return lobbyData;
+  }
 
 }
