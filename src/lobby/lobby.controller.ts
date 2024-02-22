@@ -21,6 +21,15 @@ export class PlayerDto {
   ready: boolean;
 }
 
+export class LobbyData {
+  @ApiProperty({ example: 4 })
+  maxPlayers: number;
+  @ApiProperty({ example: 3 })
+  countPlayers: number;
+  @ApiProperty({ example: "d421" })
+  lobbyCode: string;
+}
+
 @ApiTags('lobby')
 @Controller('lobby')
 export class LobbyController {
@@ -87,7 +96,6 @@ export class LobbyController {
   }
 
   @UseGuards(JwtAuthenticationGuard, IsUserInLobbyGuard)
-  @UseGuards()
   @Get('players')
   @ApiOperation({ summary: 'Get list of players in the lobby' })
   @ApiOkResponse({ type: [PlayerDto] })
@@ -111,8 +119,10 @@ export class LobbyController {
   }
 
   @UseGuards(JwtAuthenticationGuard)
+  @ApiOperation({ summary: 'Get lobby data' })
+  @ApiOkResponse({ type: [LobbyData] })
   @Get('/data')
-  async getLobbyData(@Param('id') id: string, @Req() request: RequestWithUser) {
+  async getLobbyData(@Req() request: RequestWithUser) {
     const user = request.user as CreateUserDto;
     return this.lobbyService.lobbyData(user);
   }
