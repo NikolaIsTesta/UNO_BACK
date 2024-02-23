@@ -68,7 +68,7 @@ export class GameController {
   @ApiResponse({ status: 201, description: 'Move has been made successfully.'})
   @ApiOperation({ summary: "Take the card" })
   async makeDrawingMove(@Req() request: RequestWithUser) {
-    return this.gameService.drawingCard(request);
+    return this.gameService.drawingCardMove(request);
   }
   
   @UseGuards(JwtAuthenticationGuard)

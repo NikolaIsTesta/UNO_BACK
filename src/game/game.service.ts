@@ -6,38 +6,18 @@ import RequestWithUser from 'src/authentication/requestWithUser.interface';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { LobbyService } from 'src/lobby/lobby.service';
+import { UpdateCardDto } from 'src/card/dto/update-card.dto';
+import { UpdateGameDto } from './dto/update-game.dto';
 
 async function throwBadRequestException(message: string) {
   throw new BadRequestException(message);
-}
-
-async function getGameFromDatabase(lobbyId: number): Promise<CreateGameDto> {
-  const gameFromDatabase = await this.prismaService.game.findUnique({
-      where: {
-          lobbyId
-      },
-  });
-
-  const createGameDto: CreateGameDto = {
-    id: gameFromDatabase.id,
-    lobbyId: gameFromDatabase.lobbyId,
-    deck: JSON.parse(gameFromDatabase.deck),
-    spentCards: JSON.parse(gameFromDatabase.spentCards),
-    currentPlayer: gameFromDatabase.currentPlayer,
-    currentCards: JSON.parse(gameFromDatabase.currentCards),
-    direction: gameFromDatabase.direction,
-    UNO: gameFromDatabase.UNO
-  };
-
-  return createGameDto;
 }
 
 @Injectable()
 export class GameService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly cardService: CardService,
-    private readonly lobbyService: LobbyService) {}
+    private readonly cardService: CardService) {}
 
   async findOne(lobbyId: number) {
     return await this.prismaService.game.findFirst({ where: { lobbyId } }) as CreateGameDto;
@@ -68,9 +48,13 @@ export class GameService {
   }
   
   async generateDeck(createGameDto: CreateGameDto) {
+    const colors = ['red', 'blue', 'green', 'yellow'];
     let deck = await this.cardService.createDeck();
     let currentCard = Math.floor(Math.random() * (deck.length - 1));
-    createGameDto.currentCards = [deck[currentCard]];
+    createGameDto.currentCards = [deck[currentCard]] as CreateCardDto[];
+    if (await this.isSpecialCard(createGameDto.currentCards[0])) {
+      createGameDto.currentCards[0].color =  colors[Math.floor(Math.random() * (colors.length - 1))];
+    }
     deck.splice(currentCard, 1);
     createGameDto.deck = deck;
     return createGameDto;
@@ -79,7 +63,6 @@ export class GameService {
   async generateUsersDeck(createGameDto: CreateGameDto) {
     const lobby = await this.prismaService.lobby.findFirst({ where: { id: createGameDto.lobbyId } });
     const userFromLobby = await this.prismaService.user.findMany({ where: { lobbyId: createGameDto.lobbyId } })
-    const colors = ['red', 'blue', 'green', 'yellow'];
     for (let i = 0; i < lobby.numPlayers; i++)
     {
       let userDeck: CreateCardDto[] = [];
@@ -87,9 +70,7 @@ export class GameService {
       for (let j = 0; j < 7; j++)
       {
         let newCardIndex = Math.floor(Math.random() * (createGameDto.deck.length - 1));
-        if (await this.isSpecialCard(createGameDto.deck[newCardIndex])) {
-          createGameDto.deck[newCardIndex].color =  colors[Math.floor(Math.random() * (colors.length - 1))];
-        }
+        
         userDeck.push(createGameDto.deck[newCardIndex]);
         createGameDto.deck.splice(newCardIndex, 1);
         if (userFromLobby[i].numberInTurn == lobby.numPlayers - 1 && j == 0)
@@ -135,7 +116,8 @@ export class GameService {
     }
     let currentCards = await this.getCurrentCards(lobbyId);
     const currentCard = currentCards[currentCards.length - 1];
-    const checkCard = await this.checkingCard(playerCard, currentCard);
+    const checkCard = await this.checkingUserCard(playerCard, currentCard);
+
     if (!checkCard){
       return "It is impossible to use this card"
     }
@@ -165,6 +147,9 @@ export class GameService {
     let numberCard: number | undefined; 
     for (let i = 0; i < userCards.length; i++) { 
       const card = userCards[i] as CreateCardDto;
+      if (await this.isSpecialCard(card)) {
+        card.color = playerCard.color;
+      }
       if (card.color === playerCard.color && card.value === playerCard.value) { 
         numberCard = i;
         return numberCard; 
@@ -190,7 +175,7 @@ export class GameService {
     return currentCards
   }
 
-  async checkingCard(playerCard: CreateCardDto, currentCard: CreateCardDto) {
+  async checkingUserCard(playerCard: CreateCardDto, currentCard: CreateCardDto) {
     const specialPlayerCard = await this.isSpecialCard(playerCard);
     const specialCurrentCard = await this.isSpecialCard(currentCard);
     if (specialPlayerCard) {
@@ -226,7 +211,7 @@ export class GameService {
 
   async processingMove(playerCard: CreateCardDto, currentCard: CreateCardDto, lobbyId: number) {
     const game = await this.findOne(lobbyId);
-    let currentCards = game.currentCards as any[];
+    let currentCards = game.currentCards as CreateCardDto[];
     if (await this.isDrawCard(currentCard)) {
       currentCards.push(playerCard);
       return currentCards;
@@ -237,7 +222,7 @@ export class GameService {
     }
     await this.spendCards(currentCards, lobbyId);
     currentCards = [playerCard];
-    switch (currentCards[0]) {
+    switch (currentCards[0].value) {
       case 'reverse':
           await this.playReverseCard(lobbyId);
           break;
@@ -307,7 +292,7 @@ export class GameService {
     return user.id
   }
 
-  async drawingCard( request: RequestWithUser) {
+  async drawingCardMove( request: RequestWithUser) {
     const lobbyId = request.user.lobbyId
     let currentCards = await this.getCurrentCards(lobbyId);
     let countCards = 0;
@@ -325,6 +310,7 @@ export class GameService {
     }
     let spentCards = currentCards.slice(0, currentCards.length - 1);
     await this.spendCards(spentCards, lobbyId);
+    currentCards = currentCards[currentCards.length - 1];
     const cardsTaken = await this.takeCardFromDeck(countCards, lobbyId);
     await this.updateUserCards(cardsTaken, request.user.id);
     const nextPlayer = await this.chooseNextPlayer(lobbyId);
@@ -334,25 +320,27 @@ export class GameService {
   }
 
   async takeCardFromDeck(count: number, lobbyId: number) {
-    const game = await this.findOne(lobbyId);
-    const deck = game.deck as any[];
-    const spentCards = game.spentCards as any[];
+    const game = await this.findOne(lobbyId) as CreateGameDto;
+    let deck = game.deck;
+    let spentCards = game.spentCards;
     let cardsTaken = [] as CreateCardDto[];
     let countDeckCards = await this.getCountGameDeckCards(lobbyId);
     for (let i = 0; i < count; i++) {
       if (countDeckCards === 0) {
-        const newDeck = await this.cardService.shuffleDeck(spentCards) as any[];
-        await this.prismaService.game.update({ 
-          where: { lobbyId }, 
-          data: { 
-            deck: newDeck,
-            spentCards: null
-          }, 
-        })
+        deck = await this.cardService.shuffleDeck(spentCards);
+        spentCards = null;
       }
       cardsTaken.push(deck[deck.length - 1]);
+      deck.pop();
       countDeckCards--;
     }
+    await this.prismaService.game.update({
+      where: { lobbyId }, 
+      data: { 
+        deck,
+        spentCards
+      }, 
+    })
     return cardsTaken;
   }
 
@@ -405,7 +393,7 @@ export class GameService {
 
   async getCountGameDeckCards(lobbyId: number) {
     const game = await this.findOne(lobbyId);
-    const gameDeck = await this.getCurrentCards(lobbyId);
+    const gameDeck = game.deck;
     const countGameDeck = gameDeck.length;
     return countGameDeck;
   }
@@ -432,7 +420,7 @@ export class GameService {
   async makeUnoMove(userId: number) {
    const user = await this.prismaService.user.findFirst({ where: { id: userId } });
     const lobbyId = user.lobbyId;
-    const game = await getGameFromDatabase(lobbyId);
+    const game = await this.findOne(lobbyId);
     if (!game.UNO) {
       return throwBadRequestException("You can't use UNO MOVE right now");
     }
@@ -445,7 +433,7 @@ export class GameService {
       return { "UNO MOVE was successfully completed by the player: ": user.nickname }
     }
       const unoPlayer = await this.punishPlayer(unoPlayerId);
-      return { "UNO MOVE was successfully completed by the player: ": unoPlayer.nickname }
+      return { "UNO MOVE was successfully completed by the player: ": user.nickname }
   }
 
   async getPreviousPlayerId (game: CreateGameDto, currentPlayerTurn: number) {
@@ -454,10 +442,10 @@ export class GameService {
     const sizeLobby = lobby.numPlayers;
     let unoPlayerTurn: number;
     if (game.direction === false) {
-      unoPlayerTurn = (currentPlayerTurn - 1) % sizeLobby;
+      unoPlayerTurn = (currentPlayerTurn - 1) < 0 ? sizeLobby - 1: currentPlayerTurn - 1;
     }
     else {
-      unoPlayerTurn = (currentPlayerTurn + 1) < 0 ? sizeLobby - 1: currentPlayerTurn + 1;
+      unoPlayerTurn = (currentPlayerTurn + 1) % sizeLobby;
     }
     const unoPlayer = await this.prismaService.user.findFirst({
       where: {  
@@ -469,9 +457,9 @@ export class GameService {
   }
 
   async punishPlayer (playerId: number) {
-    const player = await this.prismaService.user.findFirst({ where: { id: playerId } })
+    const player = await this.prismaService.user.findFirst({ where: { id: playerId } }) as CreateUserDto;
     const punishingPlayer = await this.takeCardFromDeck(2, player.lobbyId);
-    const unoPlayerFromDataBase: CreateUserDto = { id: player.id, cards: JSON.parse(player.cards.toString()) }
+    const unoPlayerFromDataBase: CreateUserDto = { id: player.id, cards:  player.cards}
     const unoPlayerDeck = unoPlayerFromDataBase.cards;
     unoPlayerDeck.push(...punishingPlayer);
     await this.prismaService.user.update({ 
@@ -479,11 +467,6 @@ export class GameService {
       data: { cards: unoPlayerDeck }
      })
      return player;
-  }
-
-  async checkLobbyReady (lobbyId: number) {
-    const lobby = await this.prismaService.lobby.findUnique({ where: { id: lobbyId } });
-
   }
 
   async clearPlayersCards (userId: number) {
@@ -494,7 +477,6 @@ export class GameService {
   }
 
   async endGame (lobbyId: number, userId: number) {
-    const game = await this.findOne(lobbyId);
     await this.prismaService.game.delete({ where: { lobbyId } });
     const user = await this.prismaService.user.findFirst({ 
       where: { id: userId }, 
