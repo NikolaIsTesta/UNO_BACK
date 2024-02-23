@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, UseGuards, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -18,8 +18,8 @@ export class UsersController {
   @ApiOperation({ summary: "Create new user" })
   @ApiCreatedResponse({ type: CreateUserDto })
   @ApiBadRequestResponse({ description: 'User doesnt created' })
-  create() {
-    return this.usersService.create();
+  async create() {
+    return await this.usersService.create();
   }
 
   @UseGuards(JwtAuthenticationGuard)
@@ -36,8 +36,8 @@ export class UsersController {
             value: {nickname: "ReiFanta"} as CreateUserDto
         }
     }})
-  updateNickname(@Req() request: RequestWithUser, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.updateNickname(request.user.id, updateUserDto.nickname);
+  async updateNickname(@Req() request: RequestWithUser, @Body() updateUserDto: UpdateUserDto) {
+    return await this.usersService.updateNickname(request.user.id, updateUserDto.nickname);
   }
 
   @UseGuards(JwtAuthenticationGuard)
@@ -45,7 +45,7 @@ export class UsersController {
   @ApiOperation({ summary: "Switch the player's status in the lobby to ready/not ready" })
   @ApiOkResponse({ type: stateUserDto })
   @ApiBadRequestResponse({ description: 'Bad request' })
-  switchReadyField(@Req() request: RequestWithUser) {
-    return this.usersService.updateFieldReady(request.user.id);
+  async switchReadyField(@Req() request: RequestWithUser) {
+    return await this.usersService.updateFieldReady(request.user.id);
   }
 }

@@ -7,6 +7,7 @@ import RequestWithUser from 'src/authentication/requestWithUser.interface';
 import HostGuard from 'src/guards/host.guard';
 import IsUserInLobbyGuard from 'src/guards/user-in-lobby.guard';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+
 export class hostIdLobbyDto {
   @ApiProperty({ example: 1 })
   hostId: number;
@@ -51,9 +52,9 @@ export class LobbyController {
         }
     }
 })
-  create(@Req() request: RequestWithUser, @Body() createLobbyDto: CreateLobbyDto) {
+  async create(@Req() request: RequestWithUser, @Body() createLobbyDto: CreateLobbyDto) {
     createLobbyDto.hostId = request.user.id;
-    return this.lobbyService.create(createLobbyDto);
+    return await this.lobbyService.create(createLobbyDto);
   }
   
   @UseGuards(JwtAuthenticationGuard)
@@ -73,7 +74,7 @@ export class LobbyController {
     }
 })
   async joinLobby(@Req() request: RequestWithUser, @Body() createLobbyDto: CreateLobbyDto) {
-    return this.lobbyService.joinLobby(request.user.id, createLobbyDto);
+    return await this.lobbyService.joinLobby(request.user.id, createLobbyDto);
   }
 
 
@@ -83,7 +84,7 @@ export class LobbyController {
   @ApiOkResponse({ description: 'Exit from the lobby was successfully completed.'})
   @ApiBadRequestResponse({ description: 'It is not possible to exit the lobby' })
   async exitLobby(@Req() request: RequestWithUser) {
-    return this.lobbyService.exitLobby(request.user.id);
+    return await this.lobbyService.exitLobby(request.user.id);
   }
 
   @UseGuards(JwtAuthenticationGuard, IsUserInLobbyGuard)
@@ -92,7 +93,7 @@ export class LobbyController {
   @ApiOkResponse({ type: hostIdLobbyDto })
   @ApiBadRequestResponse({ description: "Lobby does not exist" })
   async getHostId(@Req() request: RequestWithUser){
-    return this.lobbyService.getHostIdFromIdLobby(request.user.lobbyId);
+    return await this.lobbyService.getHostIdFromIdLobby(request.user.lobbyId);
   }
 
   @UseGuards(JwtAuthenticationGuard, IsUserInLobbyGuard)
@@ -100,7 +101,7 @@ export class LobbyController {
   @ApiOperation({ summary: 'Get list of players in the lobby' })
   @ApiOkResponse({ type: [PlayerDto] })
   async getPlayers(@Req() request: RequestWithUser){
-    return this.lobbyService.getAllPlayersInLobby(request.user.lobbyId);
+    return await this.lobbyService.getAllPlayersInLobby(request.user.lobbyId);
   }
 
   @UseGuards(JwtAuthenticationGuard, HostGuard)
@@ -115,7 +116,7 @@ export class LobbyController {
     type: Number
   })
   async kickPlayer(@Param('id') id: string, @Req() request: RequestWithUser) {
-    return this.lobbyService.kickUserFromLobby(+id, request.user.id);
+    return await this.lobbyService.kickUserFromLobby(+id, request.user.id);
   }
 
   @UseGuards(JwtAuthenticationGuard)
@@ -124,6 +125,6 @@ export class LobbyController {
   @Get('/data')
   async getLobbyData(@Req() request: RequestWithUser) {
     const user = request.user as CreateUserDto;
-    return this.lobbyService.lobbyData(user);
+    return await this.lobbyService.lobbyData(user);
   }
 }

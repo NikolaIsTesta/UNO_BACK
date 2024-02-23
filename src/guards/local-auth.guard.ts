@@ -1,12 +1,10 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import TokenPayload from 'src/authentication/tokenPayload.interface';
-import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class LocalAuthGuard implements CanActivate {
-constructor(private readonly jwtService: JwtService,
-  private readonly usersService: UsersService) {}
+constructor(private readonly jwtService: JwtService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
       const { cookies } = context.switchToHttp().getRequest();

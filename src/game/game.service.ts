@@ -6,8 +6,6 @@ import RequestWithUser from 'src/authentication/requestWithUser.interface';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { LobbyService } from 'src/lobby/lobby.service';
-import { UpdateCardDto } from 'src/card/dto/update-card.dto';
-import { UpdateGameDto } from './dto/update-game.dto';
 
 async function throwBadRequestException(message: string) {
   throw new BadRequestException(message);
@@ -17,7 +15,8 @@ async function throwBadRequestException(message: string) {
 export class GameService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly cardService: CardService) {}
+    private readonly cardService: CardService,
+    private readonly lobbyService: LobbyService) {}
 
   async findOne(lobbyId: number) {
     return await this.prismaService.game.findFirst({ where: { lobbyId } }) as CreateGameDto;
@@ -34,7 +33,7 @@ export class GameService {
 
   async generateUserTurn(lobbyId: number) {
     const userTurn = [];
-    const lobby = await this.prismaService.lobby.findFirst({ where: { id: lobbyId } });
+    const lobby = await this.lobbyService.findOne(lobbyId);
     for (let i = 0; i < lobby.numPlayers; i++)
       userTurn.push(i);
     userTurn.sort(() => Math.random() - 0.5);
@@ -61,7 +60,7 @@ export class GameService {
   }
 
   async generateUsersDeck(createGameDto: CreateGameDto) {
-    const lobby = await this.prismaService.lobby.findFirst({ where: { id: createGameDto.lobbyId } });
+    const lobby = await this.lobbyService.findOne(createGameDto.lobbyId);
     const userFromLobby = await this.prismaService.user.findMany({ where: { lobbyId: createGameDto.lobbyId } })
     for (let i = 0; i < lobby.numPlayers; i++)
     {
@@ -89,7 +88,8 @@ export class GameService {
        select: {
         id: true,
         lobbyId: true,
-        currentCards: true
+        currentCards: true,
+        currentPlayer: true
        }
       })
     if (!game) {
@@ -97,27 +97,29 @@ export class GameService {
     }
     const usersFromLobby = await this.prismaService.user.findMany({ where: { lobbyId } })
     const userCardsField = usersFromLobby.map(user => ({ id: user.id, countCardsards: user.cards.length }));
+    const currentPlayerId = await this.getCurrentPlayerId(lobbyId, game.currentPlayer);
     const gameData = {
       gameID: game.id,
       lobbyID: game.lobbyId,
       currentCards: game.currentCards,
       currentPlayerCards: user.cards,
-      userCardsField
+      userCardsField,
+      currentPlayerId
     };
     return gameData;
   }
 
   async putCardDown( request: RequestWithUser, playerCard: CreateCardDto ) {
-    const lobbyId = request.user.lobbyId
-    const userCards = request.user.cards as any[]; 
+    const user = request.user as CreateUserDto;
+    const lobbyId = user.lobbyId
+    const userCards = user.cards; 
     const numberCard = await this.getNumberCard(userCards, playerCard);
-    if (numberCard === undefined) {
+    if (numberCard === -1) {
       return "The user does not have such a card"
     }
     let currentCards = await this.getCurrentCards(lobbyId);
     const currentCard = currentCards[currentCards.length - 1];
     const checkCard = await this.checkingUserCard(playerCard, currentCard);
-
     if (!checkCard){
       return "It is impossible to use this card"
     }
@@ -125,7 +127,7 @@ export class GameService {
     const nextPlayer = await this.chooseNextPlayer(lobbyId);
     const nextPlayerId = await this.getCurrentPlayerId(lobbyId, nextPlayer);
     const userId = request.user.id;
-    await this.removeCardFromHand(userCards, numberCard, userId);
+    await this.removeCardFromHand(numberCard, userId);
     const countUserCards = await this.getCountUserCards(userId);
     switch (countUserCards) {
       case 0: 
@@ -142,23 +144,19 @@ export class GameService {
     return { nextPlayerId: nextPlayerId };
   }
 
-  async getNumberCard(userCards: any[], playerCard: CreateCardDto) { 
-    
-    let numberCard: number | undefined; 
-    for (let i = 0; i < userCards.length; i++) { 
-      const card = userCards[i] as CreateCardDto;
+  async getNumberCard(userCards: CreateCardDto[], playerCard: CreateCardDto) {
+    await Promise.all(userCards.map(async (card) => {
       if (await this.isSpecialCard(card)) {
         card.color = playerCard.color;
       }
-      if (card.color === playerCard.color && card.value === playerCard.value) { 
-        numberCard = i;
-        return numberCard; 
-      }
-    }
-    return numberCard
+    }))
+    const index = userCards.findIndex(card => card.color === playerCard.color && card.value === playerCard.value);
+    return index;
   }
 
-  async removeCardFromHand(userCards: any[], numberCard: number, userId: number) {
+  async removeCardFromHand(numberCard: number, userId: number) {
+    const user = await this.prismaService.user.findUnique({ where: { id: userId } }) as CreateUserDto;
+    const userCards = user.cards;
     userCards.splice(numberCard, 1);
     await this.prismaService.user.update({
       where: { id: userId },
@@ -170,35 +168,30 @@ export class GameService {
     const CurrentCardsField = await this.prismaService.game.findFirst({
       where: { lobbyId },
       select: { currentCards: true }
-    })
-    const currentCards = CurrentCardsField.currentCards as any[];
+    }) as CreateGameDto;
+    const currentCards = CurrentCardsField.currentCards;
     return currentCards
   }
 
   async checkingUserCard(playerCard: CreateCardDto, currentCard: CreateCardDto) {
     const specialPlayerCard = await this.isSpecialCard(playerCard);
     const specialCurrentCard = await this.isSpecialCard(currentCard);
+    const drawCurrenCard = await this.isDrawCard(currentCard);
     if (specialPlayerCard) {
-      if (!specialCurrentCard) {
-        return true
+      if (!specialCurrentCard || playerCard.value === 'wild draw 4' || (playerCard.value === 'wild' && !drawCurrenCard)) {
+        return true;
       }
-      if (playerCard.value === 'wild draw 4') {
-        return true
-      }
-      if (playerCard.value === 'wild' && currentCard.value !== 'wild draw 4') {
-        return true
-      }
-      return false
+      return false;
     }
-
     if (playerCard.color === currentCard.color && currentCard.value !== 'draw 2') {
-      return true
+      return true;
     }
-    else
-      if (playerCard.value === currentCard.value || playerCard.value === 'draw 2' && currentCard.value === "draw 2 used") {
-        return true
-      }
-    return false
+  
+    if (playerCard.value === currentCard.value || (playerCard.value === 'draw 2' && currentCard.value === 'draw 2 used')) {
+      return true;
+    }
+  
+    return false;
   }
 
   async isSpecialCard(playerCard: CreateCardDto) {
@@ -236,7 +229,7 @@ export class GameService {
   }
 
   async isDrawCard(card: CreateCardDto) {
-    const drawCards = ['draw 2', 'draw 4'];
+    const drawCards = ['draw 2', 'wild draw 4'];
     if (drawCards.includes(card.value)) {
       return true
     }
@@ -273,20 +266,23 @@ export class GameService {
     return currentPlayer;
   }
 
-  async updateGameData(lobbyId: number, newCurrentCards: any[], newCurrentPlayer: number) {
+  async updateGameData(lobbyId: number, newCurrentCards: CreateCardDto[], newCurrentPlayer: number) {
+    const formattedCurrentCards = newCurrentCards.map(card => ({...card}));
     await this.prismaService.game.update({ 
       where: { lobbyId }, 
       data: {
-         currentCards: newCurrentCards,
+          currentCards: {
+          set: formattedCurrentCards
+        },
          currentPlayer: newCurrentPlayer
       }
     })
   }
 
-  async getCurrentPlayerId(lobbyId: number, currentPlayer: number) {
+  async getCurrentPlayerId(lobbyId: number, numberCurrentPlayer: number) {
     const user = await this.prismaService.user.findFirst({ where: {
       lobbyId,
-      numberInTurn: currentPlayer 
+      numberInTurn: numberCurrentPlayer 
       }
     });
     return user.id
@@ -310,7 +306,7 @@ export class GameService {
     }
     let spentCards = currentCards.slice(0, currentCards.length - 1);
     await this.spendCards(spentCards, lobbyId);
-    currentCards = currentCards[currentCards.length - 1];
+    currentCards = [currentCards[currentCards.length - 1]];
     const cardsTaken = await this.takeCardFromDeck(countCards, lobbyId);
     await this.updateUserCards(cardsTaken, request.user.id);
     const nextPlayer = await this.chooseNextPlayer(lobbyId);
@@ -320,7 +316,7 @@ export class GameService {
   }
 
   async takeCardFromDeck(count: number, lobbyId: number) {
-    const game = await this.findOne(lobbyId) as CreateGameDto;
+    const game = await this.findOne(lobbyId);
     let deck = game.deck;
     let spentCards = game.spentCards;
     let cardsTaken = [] as CreateCardDto[];
@@ -344,7 +340,7 @@ export class GameService {
     return cardsTaken;
   }
 
-  async sumDrawingCards(currentCards: any[]) {
+  async sumDrawingCards(currentCards: CreateCardDto[]) {
     let currentCard: CreateCardDto;
     let sumDrawingCards = 0;
     for (let i = 0; i < currentCards.length; i++) {
@@ -362,7 +358,7 @@ export class GameService {
     }
   }
 
-  async updateUserCards(cardsTaken: any[], userId: number) {
+  async updateUserCards(cardsTaken: CreateCardDto[], userId: number) {
     const user = await this.prismaService.user.findFirst({ where: { id:userId } }) as CreateUserDto;
     let userDeck = user.cards;
     if (!userDeck) {
@@ -385,8 +381,8 @@ export class GameService {
   }
 
   async getCountUserCards(userId: number) {
-    const user = await this.prismaService.user.findFirst({ where: { id: userId } });
-    const userDeck = user.cards as any[];
+    const user = await this.prismaService.user.findFirst({ where: { id: userId } }) as CreateUserDto;
+    const userDeck = user.cards;
     const countUserCards = userDeck.length;
     return countUserCards;
   }
@@ -398,9 +394,9 @@ export class GameService {
     return countGameDeck;
   }
 
-  async spendCards(cards: any[], lobbyId: number) {
+  async spendCards(cards: CreateCardDto[], lobbyId: number) {
     const game = await this.findOne(lobbyId);
-    const spentCards = game.spentCards as any[];
+    const spentCards = game.spentCards;
     for (let i = 0; i < cards.length; i++) {
       spentCards.push(cards[i]);
     }
@@ -459,8 +455,8 @@ export class GameService {
   async punishPlayer (playerId: number) {
     const player = await this.prismaService.user.findFirst({ where: { id: playerId } }) as CreateUserDto;
     const punishingPlayer = await this.takeCardFromDeck(2, player.lobbyId);
-    const unoPlayerFromDataBase: CreateUserDto = { id: player.id, cards:  player.cards}
-    const unoPlayerDeck = unoPlayerFromDataBase.cards;
+    const unoPlayer: CreateUserDto = { id: player.id, cards:  player.cards}
+    const unoPlayerDeck = unoPlayer.cards;
     unoPlayerDeck.push(...punishingPlayer);
     await this.prismaService.user.update({ 
       where: { id: player.id },

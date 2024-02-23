@@ -1,14 +1,13 @@
 import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
 import { LobbyService } from 'src/lobby/lobby.service';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import { UsersService } from "src/users/users.service"
 
 @Injectable()
 export default class LobbyFilledGuard implements CanActivate {
-    constructor(private readonly usersService: UsersService, private readonly lobbyService: LobbyService) {}
+    constructor(private readonly lobbyService: LobbyService) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const { user, params } = context.switchToHttp().getRequest();
+        const { user } = context.switchToHttp().getRequest();
         if (!user) {
             return false;
         }

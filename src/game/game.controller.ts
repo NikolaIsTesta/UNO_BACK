@@ -18,6 +18,11 @@ export class gameStartDto {
   currentPlayerId: number
 }
 
+export class nexpPlayerDto {
+  @ApiProperty({ example: 2 })
+  nextPlayerId: number
+}
+
 @ApiTags('game')
 @Controller('game')
 export class GameController {
@@ -29,7 +34,7 @@ export class GameController {
   @ApiCreatedResponse({ type: gameStartDto })
   @ApiBadRequestResponse({ description: 'Game doesnt created' })
   async startGame(@Req() request: RequestWithUser) {
-    return this.gameService.startGame(request.user.lobbyId);
+    return await this.gameService.startGame(request.user.lobbyId);
   }
 
   @UseGuards(JwtAuthenticationGuard)
@@ -39,13 +44,13 @@ export class GameController {
   @ApiBadRequestResponse({ description: 'There is no game session' })
   async getGameData(@Req() request: RequestWithUser) {
     const user = request.user as CreateUserDto;
-    return this.gameService.getGameDataFromId(user);
+    return await this.gameService.getGameDataFromId(user);
   }
 
 
   @UseGuards(JwtAuthenticationGuard, PlayerTurnGuard, NotUnoMove)
   @Post('motion/card')
-  @ApiResponse({ status: 201, description: 'Move has been made successfully.'})
+  @ApiOkResponse({ type: nexpPlayerDto })
   @ApiBadRequestResponse({ description: 'The move cannot be made' })
   @ApiOperation({ summary: "Make a move" })
   @ApiBody({
@@ -60,15 +65,15 @@ export class GameController {
     }
 })
   async makeMoveWithCard(@Req() request: RequestWithUser, @Body() playerCard: CreateCardDto) {
-    return this.gameService.putCardDown(request, playerCard);
+    return await this.gameService.putCardDown(request, playerCard);
   }
 
   @UseGuards(JwtAuthenticationGuard, PlayerTurnGuard, NotUnoMove)
   @Post('motion/take')
-  @ApiResponse({ status: 201, description: 'Move has been made successfully.'})
+  @ApiOkResponse({ type: nexpPlayerDto })
   @ApiOperation({ summary: "Take the card" })
   async makeDrawingMove(@Req() request: RequestWithUser) {
-    return this.gameService.drawingCardMove(request);
+    return await this.gameService.drawingCardMove(request);
   }
   
   @UseGuards(JwtAuthenticationGuard)

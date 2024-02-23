@@ -10,7 +10,6 @@ export default class NotUnoMove implements CanActivate {
         if (!user) {
             return false;
         }
-        const userId = user.id;
         const lobbyId = user.lobbyId;
         const game = await this.gameService.findOne(lobbyId);
         if (!game) {
