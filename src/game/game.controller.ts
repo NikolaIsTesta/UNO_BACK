@@ -11,16 +11,54 @@ import NotUnoMove from 'src/guards/not-uno-move.guard';
 import LobbyFilledGuard from 'src/guards/lobby-filled.guard';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
-export class gameStartDto {
-  @ApiProperty({ example: 1 })
-  id: number;
-  @ApiProperty({ example: 1 })
-  currentPlayerId: number
-}
-
 export class nexpPlayerDto {
   @ApiProperty({ example: 2 })
   nextPlayerId: number
+}
+
+export class userDataDto {
+  @ApiProperty({ example: 3 })
+  id: number;
+  @ApiProperty({ example: 7 })
+  countCards: number;
+  @ApiProperty({ example: "Rei" })
+  nickname: string;
+}
+
+export class gameDataDto {
+  @ApiProperty()
+  gameID: number;
+  @ApiProperty( { example: [
+    {
+      "color": "blue",
+      "value": "4"
+    }
+  ]})
+  currentCards: CreateCardDto[];
+  @ApiProperty({ example: [
+    {
+      "color": "yellow",
+      "value": "draw 2"
+    }
+  ]})
+  currentPlayerCards: CreateCardDto[];
+  @ApiProperty({ example: [
+    {
+      "id": 1,
+      "countCardsards": 3,
+      "nickname": "Игрок1"
+    },
+    {
+      "id": 2,
+      "countCardsards": 6,
+      "nickname": "Игрок2"
+    }
+  ]})
+  userCardsField: userDataDto[];
+  @ApiProperty({ example: 3 })
+  currentPlayerId: number;
+  @ApiProperty({ example: "Rei01" })
+  currentNickname: string
 }
 
 @ApiTags('game')
@@ -30,8 +68,7 @@ export class GameController {
 
   @UseGuards(JwtAuthenticationGuard, HostGuard, LobbyFilledGuard)
   @Get('start')
-  @ApiOperation({ summary: "The host starts the game" })
-  @ApiCreatedResponse({ type: gameStartDto })
+  @ApiOperation({ summary: "The game has started" })
   @ApiBadRequestResponse({ description: 'Game doesnt created' })
   async startGame(@Req() request: RequestWithUser) {
     return await this.gameService.startGame(request.user.lobbyId);
@@ -40,7 +77,7 @@ export class GameController {
   @UseGuards(JwtAuthenticationGuard)
   @Get('data')
   @ApiOperation({ summary: "Get game data" })
-  @ApiOkResponse({ type: CreateGameDto })
+  @ApiOkResponse({ type: gameDataDto })
   @ApiBadRequestResponse({ description: 'There is no game session' })
   async getGameData(@Req() request: RequestWithUser) {
     const user = request.user as CreateUserDto;

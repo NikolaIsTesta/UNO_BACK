@@ -29,6 +29,8 @@ export class LobbyData {
   countPlayers: number;
   @ApiProperty({ example: "d421" })
   lobbyCode: string;
+  @ApiProperty({ example: false })
+  isGameStarted: boolean;
 }
 
 @ApiTags('lobby')

@@ -28,7 +28,7 @@ export class GameService {
     newGame.currentPlayer = 0;
     const createdGame = await this.prismaService.game.create({ data: newGame });
     const currentPlayerId = await this.getCurrentPlayerId(lobbyId, createdGame.currentPlayer);
-    return { id: createdGame.id, currentPlayerId: currentPlayerId }
+    return "The game has started"
   }
 
   async generateUserTurn(lobbyId: number) {
@@ -96,15 +96,16 @@ export class GameService {
       return "There is no game session";
     }
     const usersFromLobby = await this.prismaService.user.findMany({ where: { lobbyId } })
-    const userCardsField = usersFromLobby.map(user => ({ id: user.id, countCardsards: user.cards.length }));
+    const userCardsField = usersFromLobby.map(user => ({ id: user.id, countCardsards: user.cards.length, nickname: user.nickname }));
     const currentPlayerId = await this.getCurrentPlayerId(lobbyId, game.currentPlayer);
+    const currentUser = await this.prismaService.user.findFirst({ where:{ id: currentPlayerId } });
     const gameData = {
       gameID: game.id,
-      lobbyID: game.lobbyId,
       currentCards: game.currentCards,
       currentPlayerCards: user.cards,
       userCardsField,
-      currentPlayerId
+      currentPlayerId,
+      currentNickname: currentUser.nickname
     };
     return gameData;
   }
