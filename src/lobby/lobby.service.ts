@@ -28,7 +28,7 @@ export class LobbyService {
       return newLobby;
   }
 
-    async joinLobby(id: number, createLobbyDto: CreateLobbyDto){
+    async joinLobby(userId: number, createLobbyDto: CreateLobbyDto){
       let code = createLobbyDto.code;
       const existingLobby = await this.prismaService.lobby.findFirst({ where: {code} });
       if (existingLobby)
@@ -36,9 +36,10 @@ export class LobbyService {
         const count = await this.prismaService.user.count({ where: {lobbyId: existingLobby.id} })
         if (count < existingLobby.numPlayers){
           await this.prismaService.user.update({
-            where: { id: id },
+            where: { id: userId },
             data:  { lobbyId: existingLobby.id}
           });
+          await this.nicknameVerification(userId)
           return "You have entered the lobby";
         }
         else
@@ -132,4 +133,23 @@ export class LobbyService {
     }
     return true;
   }
+
+  async nicknameVerification(userId: number) {
+    const user = await this.prismaService.user.findFirst({ where: { id: userId } });
+    const users = await this.getAllPlayersInLobby(user.lobbyId) as CreateUserDto[];
+    let existingNickname = users.some(player => player.nickname === user.nickname && player.id !== userId);
+    let newNickname = user.nickname;
+    if (!existingNickname) {
+      return;
+    }
+    while (existingNickname) {
+      newNickname = newNickname + uuidv4().slice(0, 2);
+      existingNickname = users.some(player => player.nickname === newNickname);
+    }
+    await this.prismaService.user.update({ 
+      where: { id: userId },
+      data: { nickname: newNickname }
+     })
+  }
+
 }
