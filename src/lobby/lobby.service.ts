@@ -33,6 +33,10 @@ export class LobbyService {
       const existingLobby = await this.prismaService.lobby.findFirst({ where: {code} });
       if (existingLobby)
       {
+        const game = await this.prismaService.game.findFirst({ where: { lobbyId: existingLobby.id } });
+        if (game) {
+          return "You cannot join the lobby during the game";
+        }
         const count = await this.prismaService.user.count({ where: {lobbyId: existingLobby.id} })
         if (count < existingLobby.numPlayers){
           await this.prismaService.user.update({

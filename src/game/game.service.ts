@@ -6,6 +6,7 @@ import RequestWithUser from 'src/authentication/requestWithUser.interface';
 import { CreateCardDto } from 'src/card/dto/create-card.dto';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { LobbyService } from 'src/lobby/lobby.service';
+import { timer } from 'rxjs';
 
 async function throwBadRequestException(message: string) {
   throw new BadRequestException(message);
@@ -142,6 +143,7 @@ export class GameService {
       default: break;
     }
     await this.updateGameData(lobbyId, currentCards, nextPlayer);
+    await this.checkTimeLimit(30, nextPlayerId);
     return { nextPlayerId: nextPlayerId };
   }
 
@@ -312,7 +314,7 @@ export class GameService {
     await this.updateUserCards(cardsTaken, request.user.id);
     const nextPlayer = await this.chooseNextPlayer(lobbyId);
     const nextPlayerId = await this.getCurrentPlayerId(request.user.lobbyId, nextPlayer);
-    await this.updateGameData(lobbyId, currentCards, nextPlayer);
+    await this.checkTimeLimit(30, nextPlayerId);
     return { nextPlayerId: nextPlayerId };
   }
 
@@ -484,4 +486,49 @@ export class GameService {
     })
     return user;
   }
+
+  async checkTimeLimit(duration: number, trackedPlayerId: number) {
+    const observable = timer(duration * 1000);
+    const subscription = observable.subscribe(async () => {
+      await this.deleteUser(trackedPlayerId);
+    });
+    const resetTimer = () => {
+      subscription.unsubscribe();
+    };
+    setTimeout(resetTimer, duration * 1000);
+  }
+
+  async deleteUser(trackedPlayerId: number) { 
+    const user = await this.prismaService.user.findFirst({ where: { id:trackedPlayerId } });
+    const game = await this.findOne(user.lobbyId);
+    const newSpentCards = [...game.spentCards, ...user.cards];
+    await this.prismaService.game.update({
+      where: { lobbyId: user.lobbyId },
+      data: { spentCards: newSpentCards }
+    })
+
+    let lobbyPlayers = await this.lobbyService.getAllPlayersInLobby(user.lobbyId) as CreateUserDto[];
+    const updatedPlayers = lobbyPlayers.filter(player => player.id !== trackedPlayerId);
+
+    for (const player of updatedPlayers) {
+        if (player.numberInTurn > user.numberInTurn) {
+          player.numberInTurn --;
+        }
+        await this.prismaService.user.update({ 
+            where: { id: player.id }, 
+            data: { numberInTurn:  player.numberInTurn} 
+        });
+    }
+
+    await this.prismaService.user.update({
+      where: { id: trackedPlayerId },
+      data:  { lobbyId: null }
+    })
+
+    lobbyPlayers = await this.lobbyService.getAllPlayersInLobby(user.lobbyId) as CreateUserDto[];
+    if (lobbyPlayers.length <= 1) {
+      return await this.endGame(user.lobbyId, lobbyPlayers[0].id);
+    }
+  }
+
 }

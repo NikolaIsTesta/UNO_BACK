@@ -11,7 +11,7 @@ import NotUnoMove from 'src/guards/not-uno-move.guard';
 import LobbyFilledGuard from 'src/guards/lobby-filled.guard';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
-export class nexpPlayerDto {
+export class nextPlayerDto {
   @ApiProperty({ example: 2 })
   nextPlayerId: number
 }
@@ -87,7 +87,7 @@ export class GameController {
 
   @UseGuards(JwtAuthenticationGuard, PlayerTurnGuard, NotUnoMove)
   @Post('motion/card')
-  @ApiOkResponse({ type: nexpPlayerDto })
+  @ApiOkResponse({ type: nextPlayerDto })
   @ApiBadRequestResponse({ description: 'The move cannot be made' })
   @ApiOperation({ summary: "Make a move" })
   @ApiBody({
@@ -107,7 +107,7 @@ export class GameController {
 
   @UseGuards(JwtAuthenticationGuard, PlayerTurnGuard, NotUnoMove)
   @Post('motion/take')
-  @ApiOkResponse({ type: nexpPlayerDto })
+  @ApiOkResponse({ type: nextPlayerDto })
   @ApiOperation({ summary: "Take the card" })
   async makeDrawingMove(@Req() request: RequestWithUser) {
     return await this.gameService.drawingCardMove(request);
