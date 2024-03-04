@@ -28,7 +28,6 @@ export class GameService {
     newGame = await this.generateUsersDeck(newGame);
     newGame.currentPlayer = 0;
     const createdGame = await this.prismaService.game.create({ data: newGame });
-    const currentPlayerId = await this.getCurrentPlayerId(lobbyId, createdGame.currentPlayer);
     return "The game has started"
   }
 
@@ -52,7 +51,7 @@ export class GameService {
     let deck = await this.cardService.createDeck();
     let currentCard = Math.floor(Math.random() * (deck.length - 1));
     createGameDto.currentCards = [deck[currentCard]] as CreateCardDto[];
-    if (await this.isSpecialCard(createGameDto.currentCards[0])) {
+    if (await this.isSpecialCard(createGameDto.currentCards[0]) || await this.isDrawCard(createGameDto.currentCards[0])) {
       createGameDto.currentCards[0].color =  colors[Math.floor(Math.random() * (colors.length - 1))];
     }
     deck.splice(currentCard, 1);
