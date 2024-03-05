@@ -28,7 +28,7 @@ export class GameService {
     newGame = await this.generateUsersDeck(newGame);
     newGame.currentPlayer = 0;
     const createdGame = await this.prismaService.game.create({ data: newGame });
-    return "The game has started"
+    return "The game has started";
   }
 
   async generateUserTurn(lobbyId: number) {
@@ -145,7 +145,6 @@ export class GameService {
       default: break;
     }
     await this.updateGameData(lobbyId, currentCards, nextPlayer);
-    await this.checkTimeLimit(30, nextPlayerId);
     return { nextPlayerId: nextPlayerId };
   }
 
@@ -317,7 +316,6 @@ export class GameService {
     const nextPlayer = await this.chooseNextPlayer(lobbyId);
     const nextPlayerId = await this.getCurrentPlayerId(request.user.lobbyId, nextPlayer);
     await this.updateGameData(lobbyId, currentCards, nextPlayer);
-    await this.checkTimeLimit(30, nextPlayerId);
     return { nextPlayerId: nextPlayerId };
   }
 
@@ -488,17 +486,6 @@ export class GameService {
       } 
     })
     return user;
-  }
-
-  async checkTimeLimit(duration: number, trackedPlayerId: number) {
-    const observable = timer(duration * 1000);
-    const subscription = observable.subscribe(async () => {
-      await this.deleteUser(trackedPlayerId);
-    });
-    const resetTimer = () => {
-      subscription.unsubscribe();
-    };
-    setTimeout(resetTimer, duration * 1000);
   }
 
   async deleteUser(trackedPlayerId: number) { 

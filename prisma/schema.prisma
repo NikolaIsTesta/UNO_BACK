@@ -20,7 +20,6 @@ model Game{
     direction         Boolean?       @default(false)
     lobby             Lobby          @relation(fields: [lobbyId], references: [id])
     UNO               Boolean        @default(false)
-
 }
 
 model Lobby {

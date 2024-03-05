@@ -2,9 +2,9 @@
 CREATE TABLE "Game" (
     "id" SERIAL NOT NULL,
     "lobbyId" INTEGER NOT NULL,
-    "deck" JSONB,
-    "spentCards" JSONB,
-    "currentCards" JSONB,
+    "deck" JSONB[],
+    "spentCards" JSONB[],
+    "currentCards" JSONB[],
     "currentPlayer" INTEGER DEFAULT 0,
     "direction" BOOLEAN DEFAULT false,
     "UNO" BOOLEAN NOT NULL DEFAULT false,
@@ -29,7 +29,8 @@ CREATE TABLE "User" (
     "lobbyId" INTEGER,
     "numberInTurn" INTEGER,
     "ready" BOOLEAN DEFAULT false,
-    "cards" JSONB,
+    "cards" JSONB[],
+    "timerSeconds" INTEGER DEFAULT 30,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
