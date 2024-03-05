@@ -51,8 +51,11 @@ export class GameService {
     let deck = await this.cardService.createDeck();
     let currentCard = Math.floor(Math.random() * (deck.length - 1));
     createGameDto.currentCards = [deck[currentCard]] as CreateCardDto[];
-    if (await this.isSpecialCard(createGameDto.currentCards[0]) || await this.isDrawCard(createGameDto.currentCards[0])) {
-      createGameDto.currentCards[0].color =  colors[Math.floor(Math.random() * (colors.length - 1))];
+    if (await this.isSpecialCard(createGameDto.currentCards[0])) {
+      createGameDto.currentCards[0].color = colors[Math.floor(Math.random() * (colors.length - 1))];
+    }
+    if (await this.isDrawCard(createGameDto.currentCards[0])) {
+      createGameDto.currentCards[0].value = "draw 2 used";
     }
     deck.splice(currentCard, 1);
     createGameDto.deck = deck;
@@ -313,6 +316,7 @@ export class GameService {
     await this.updateUserCards(cardsTaken, request.user.id);
     const nextPlayer = await this.chooseNextPlayer(lobbyId);
     const nextPlayerId = await this.getCurrentPlayerId(request.user.lobbyId, nextPlayer);
+    await this.updateGameData(lobbyId, currentCards, nextPlayer);
     await this.checkTimeLimit(30, nextPlayerId);
     return { nextPlayerId: nextPlayerId };
   }
